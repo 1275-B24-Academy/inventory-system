@@ -1,81 +1,172 @@
-
-import ProductTable from "../components/products/ProductTable";
-import { getProducts, createProduct, updateProduct } from "../services/productApi";
 import { useState, useEffect } from "react";
+
+import { useAuth } from "../auth/useAuth";
+import ProductTable from "../components/products/ProductTable";
 import ProductForm from "../components/products/ProductForm";
-   
+import {
+  getProducts,
+  createProduct,
+  updateProduct,
+} from "../services/productApi";
 
+export default function ProductsPage() {
+  const { user, logout, apiRequest } = useAuth();
 
-function ProductsPage() {
-    const [products, setProducts] = useState([]);
-    const [showForm, setShowForm] = useState(false);
-    const [editingProduct, setEditingProduct] = useState(null);
-    const handleSaveProduct = async (formData) =>{
-      const productData = {
-        ...formData,
-        price: Number(formData.price),
-        stock: Number(formData.stock)
-      };
+  const [products, setProducts] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [error, setError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadProducts() {
       try {
-        if(editingProduct !== null){
-          const updatedProduct = await updateProduct(
-            editingProduct.id, 
-            productData);
-            setProducts((prevProducts)=>
-              prevProducts.map((product)=>
-                product.id === updatedProduct.id
-                ? updatedProduct
-                : product    
-              )
-            );
-        }else{
-            const createdProduct = await createPoduct(productData);
-            setProducts((prevProducts)=>[
-              ...prevProducts,
-              createdProduct
-              ]);
-            }
-            setShowForm(false);
-            setEditingProduct(null);
+        const data = await getProducts(apiRequest);
 
-        }catch (error) {
-          alert(error.message);
+        if (!cancelled) {
+          setProducts(data);
+          setError("");
         }
-      };
-
-    
-    const handleEditProduct = (product) => {
-      setEditingProduct(product);
-      setShowForm(true);
+      } catch (error) {
+        if (!cancelled) {
+          setError(error.message);
+        }
+      }
     }
-    const handleCloseForm = () => {
+
+    loadProducts();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apiRequest]);
+
+  async function handleSaveProduct(formData) {
+    if (isSaving) {
+      return;
+    }
+
+    setIsSaving(true);
+    setError("");
+
+    const productData = {
+      ...formData,
+      price: Number(formData.price),
+      stock: Number(formData.stock),
+    };
+
+    const editingId = editingProduct?.id ?? null;
+
+    try {
+      if (editingId !== null) {
+        const updatedProduct = await updateProduct(
+          apiRequest,
+          editingId,
+          productData
+        );
+
+        setProducts((previous) =>
+          previous.map((product) =>
+            product.id === updatedProduct.id
+              ? updatedProduct
+              : product
+          )
+        );
+      } else {
+        const createdProduct = await createProduct(
+          apiRequest,
+          productData
+        );
+
+        setProducts((previous) => [
+          ...previous,
+          createdProduct,
+        ]);
+      }
+
       setShowForm(false);
       setEditingProduct(null);
-    }    
-    useEffect(() => {
-        getProducts().then((data)=>{
-            setProducts(data)
-        })
-    }, []);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  function handleEditProduct(product) {
+    if (isSaving) {
+      return;
+    }
+
+    setError("");
+    setEditingProduct(product);
+    setShowForm(true);
+  }
+
+  function handleCloseForm() {
+    if (isSaving) {
+      return;
+    }
+
+    setShowForm(false);
+    setEditingProduct(null);
+  }
+
+  async function handleLogout() {
+    setError("");
+
+    try {
+      await logout();
+    } catch (error) {
+      setError(error.message || "Đăng xuất thất bại.");
+    }
+  }
+
   return (
     <div>
-      <h1>Products</h1>
-      <ProductTable 
-      onEdit={handleEditProduct}
-      products={products} />
-      <button onClick ={() =>{
-        setEditingProduct(null); 
-        setShowForm(true);}}>
-        Add Product
+      <header>
+        <h1>Quản lý sản phẩm</h1>
+
+        <div>
+          <span>Xin chào, {user?.name || "bạn"}</span>
+          <button
+            onClick={handleLogout}
+            disabled={isSaving}
+          >
+            Đăng xuất
+          </button>
+        </div>
+      </header>
+
+      {error && <p style={{ color: "red" }}>{error}</p>}
+      {isSaving && <p>Đang lưu sản phẩm...</p>}
+
+      <ProductTable
+        products={products}
+        onEdit={handleEditProduct}
+      />
+
+      <button
+        disabled={isSaving}
+        onClick={() => {
+          setError("");
+          setEditingProduct(null);
+          setShowForm(true);
+        }}
+      >
+        Thêm sản phẩm
       </button>
-        {showForm && <ProductForm 
-        key={editingProduct?.id ?? "new" }
-        initialData={editingProduct}
-        onSubmit={handleSaveProduct}
-        onClose={handleCloseForm}
-        />}
+
+      {showForm && (
+        <ProductForm
+          key={editingProduct?.id ?? "new"}
+          initialData={editingProduct}
+          onSubmit={handleSaveProduct}
+          onClose={handleCloseForm}
+        />
+      )}
     </div>
   );
 }
-
-export default ProductsPage;    
