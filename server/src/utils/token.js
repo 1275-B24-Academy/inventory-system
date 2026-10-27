@@ -14,7 +14,7 @@ function createAccessToken(userId) {
     // Cấu hình token.
     {
       algorithm: "HS256",
-      expiresIn: "30s",
+      expiresIn: "15m",
       issuer: "inventory-server",
       audience: "inventory-api"
     }

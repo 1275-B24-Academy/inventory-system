@@ -2,6 +2,18 @@ import { readResponse } from "./apiClient";
 
 const API_URL = "http://localhost:3000/api/auth";
 
+export async function registerApi(userData) {
+  const response = await fetch(`${API_URL}/register`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(userData),
+  });
+
+  return readResponse(response);
+}
+
 export async function loginApi(credentials) {
   const response = await fetch(`${API_URL}/login`, {
     method: "POST",

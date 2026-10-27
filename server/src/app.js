@@ -8,6 +8,8 @@ const authRoutes = require("./routes/auth.routes");
 const productRoutes = require("./routes/product.routes");
 const errorHandler = require("./middlewares/errorHandler");
 const requireLogin = require("./middlewares/requireLogin");
+const goodsReceiptRoutes = require("./routes/goodsReceipt.routes");
+const requireRoles = require("./middlewares/requireRoles");
 
 const app = express();
 
@@ -22,8 +24,9 @@ app.use(cookieParser());
 
 
 app.use("/api/auth", authRoutes);
-app.use("/api/products", requireLogin, productRoutes);
+app.use("/api/products", productRoutes);
 
+app.use("/api/goods-receipts",goodsReceiptRoutes);
 
 app.use(errorHandler);
 
