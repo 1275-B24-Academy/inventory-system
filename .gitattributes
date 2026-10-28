@@ -1,2 +1,6 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Mọi file text dùng LF, kể cả khi checkout trên Windows (bỏ qua core.autocrlf)
+* text=auto eol=lf
+
+# Script chạy bằng cmd.exe của Windows bắt buộc CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
