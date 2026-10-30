@@ -59,6 +59,19 @@ npm run dev
 ```
 Mở `http://localhost:5173`.
 
+## Lint & Format
+- **ESLint** bắt lỗi logic (biến không dùng, sai quy tắc React hooks...). Config: `client/eslint.config.js`, `server/eslint.config.js`.
+- **Prettier** lo định dạng (quote, indent, xuống dòng). Config chung: `.prettierrc.json` ở thư mục gốc.
+
+Chạy trong `client/` hoặc `server/`:
+```bash
+npm run lint          # kiểm tra lỗi
+npm run format        # tự format toàn bộ
+npm run format:check  # chỉ kiểm tra, không sửa (dùng cho CI)
+```
+
+VS Code: cài các extension được gợi ý (ESLint, Prettier, EditorConfig). Khi lưu file, code sẽ tự được format và tự sửa các lỗi lint sửa được.
+
 ## Day 2
 Chỉ tập trung: ProductCard, Props, ProductList, GET/POST `/api/products`, Router.
 `productApi.js` để dành khi học fetch/Axios.
