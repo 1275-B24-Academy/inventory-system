@@ -124,6 +124,8 @@ export default function AuthProvider({ children }) {
 
   const apiRequest = useMemo(
     () =>
+       // Getter chỉ được gọi khi apiRequest thực hiện request, không phải khi render.
+       // eslint-disable-next-line react-hooks/refs
       createApiClient({
         getAccessToken: () => accessTokenRef.current,
         refreshAccessToken,
