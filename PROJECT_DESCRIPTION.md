@@ -200,12 +200,16 @@ Thư mục Backend: `server/`
 server/
 ├── package.json
 ├── eslint.config.js
-├── test-db.js
+├── prisma.config.js
+├── prisma/
+│   ├── schema.prisma
+│   └── migrations/
 └── src/
     ├── app.js
     ├── server.js
     ├── container.js
-    ├── db.js
+    ├── prisma.js
+    ├── generated/      (Prisma Client, do `prisma generate` sinh ra, không commit)
     │
     ├── controllers/
     │   ├── auth.controller.js
@@ -246,9 +250,11 @@ server/
 
 - `server.js`: khởi động HTTP server.
 - `app.js`: tạo Express app, cấu hình CORS, JSON body, cookie và routes.
-- `db.js`: tạo kết nối PostgreSQL bằng `pg`.
+- `prisma.js`: tạo một `PrismaClient` dùng chung (Prisma ORM, kết nối qua adapter `pg`).
 - `container.js`: khởi tạo repository, service, controller và inject dependency.
-- `test-db.js`: kiểm tra kết nối database.
+- `prisma/schema.prisma`: mô tả các bảng, là nơi duy nhất định nghĩa schema.
+- `prisma/migrations/`: các migration (SQL) theo version, áp bằng `npm run db:migrate`.
+- `prisma.config.js`: cấu hình Prisma CLI (đường dẫn schema, migration, URL database).
 
 #### `routes/`
 
@@ -285,7 +291,7 @@ Chứa business logic và validation:
 
 #### `repositories/`
 
-Chịu trách nhiệm truy vấn PostgreSQL:
+Chịu trách nhiệm truy vấn PostgreSQL qua Prisma Client:
 
 - `user.repository.js`: truy vấn người dùng.
 - `refreshToken.repository.js`: lưu và quản lý refresh token.
@@ -384,7 +390,7 @@ POST /api/goods-receipts/:id/confirm
 - Node.js.
 - Express.
 - PostgreSQL.
-- `pg`.
+- Prisma ORM (`prisma`, `@prisma/client`, `@prisma/adapter-pg`).
 - Argon2.
 - JSON Web Token.
 - Cookie Parser.
@@ -438,14 +444,11 @@ npm run format
 
 ## 10. Ghi chú cấu hình
 
-Backend sử dụng các biến môi trường cho PostgreSQL:
+Backend kết nối PostgreSQL bằng biến môi trường (xem `server/.env.example`):
 
 ```text
-DB_HOST
-DB_PORT
-DB_NAME
-DB_USER
-DB_PASSWORD
+DATABASE_URL            # app và Prisma CLI dùng
+DATABASE_URL_UNPOOLED   # chỉ cần trên Neon: URL direct cho migrate
 ```
 
 Frontend hiện gọi Backend tại:
