@@ -1,4 +1,4 @@
-const pool = require("../db");
+import pool from "../db.js";
 class UserRepository {
   async findbyEmail(email) {
     const result = await pool.query(
@@ -26,4 +26,4 @@ class UserRepository {
     return result.rows[0];
   }
 }
-module.exports = UserRepository;
+export default UserRepository;

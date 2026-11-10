@@ -1,8 +1,8 @@
-const js = require("@eslint/js");
-const globals = require("globals");
-const { defineConfig } = require("eslint/config");
+import js from "@eslint/js";
+import globals from "globals";
+import { defineConfig } from "eslint/config";
 
-module.exports = defineConfig([
+export default defineConfig([
   {
     ignores: ["node_modules/**", "reports/**"],
   },
@@ -11,8 +11,8 @@ module.exports = defineConfig([
     extends: [js.configs.recommended],
     languageOptions: {
       ecmaVersion: "latest",
-      sourceType: "commonjs",
-      globals: globals.node,
+      sourceType: "module",
+      globals: globals.nodeBuiltin,
     },
   },
 ]);

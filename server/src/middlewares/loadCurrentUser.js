@@ -28,4 +28,4 @@ function loadCurrentUser(userRepository) {
   };
 }
 
-module.exports = loadCurrentUser;
+export default loadCurrentUser;
