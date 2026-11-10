@@ -1,8 +1,15 @@
 # Inventory Management
 
-Ứng dụng web quản lý kho cho doanh nghiệp nhỏ: đăng ký/đăng nhập, phân quyền admin/staff, quản lý sản phẩm và phiếu nhập kho.
+Ứng dụng web quản lý kho cho doanh nghiệp nhỏ: đăng ký/đăng nhập, phân quyền admin/staff, quản lý sản phẩm, phiếu nhập và phiếu xuất kho.
 
 Stack: **React + Vite + Material UI** (client), **Node.js + Express** (server), **PostgreSQL**, xác thực bằng **JWT** (access token + refresh token).
+
+## Tổng quan
+
+- **Client** là ứng dụng React một trang: hiển thị giao diện, giữ trạng thái đăng nhập và gọi API của server.
+- **Server** là REST API viết bằng Express, chia lớp theo luồng **Route → Middleware → Controller → Service → Repository → PostgreSQL**: middleware kiểm tra đăng nhập/quyền, service chứa nghiệp vụ, repository là nơi duy nhất viết SQL.
+- **Database** PostgreSQL lưu người dùng, sản phẩm, phiếu nhập/xuất và lịch sử tồn kho; cấu trúc bảng nằm trong `server/db/schema.sql`.
+- **Xác thực**: đăng nhập nhận access token (gửi kèm mỗi request) và refresh token (cookie) để tự gia hạn phiên.
 
 ## Ảnh chụp màn hình
 
@@ -50,4 +57,4 @@ psql -d inventory -c "UPDATE users SET role = 'admin' WHERE email = 'email-cua-b
 
 ## Tài liệu
 
-Kiến trúc, cấu trúc thư mục, luồng đăng nhập/sản phẩm/phiếu nhập và quy ước lint/format: xem [PROJECT_DESCRIPTION.md](PROJECT_DESCRIPTION.md).
+Chi tiết kiến trúc, các luồng chính và quy ước lint/format: xem [PROJECT_DESCRIPTION.md](PROJECT_DESCRIPTION.md).
