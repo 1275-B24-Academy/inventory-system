@@ -48,4 +48,4 @@ class GoodsIssueController {
   };
 }
 
-module.exports = GoodsIssueController;
+export default GoodsIssueController;

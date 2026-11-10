@@ -69,4 +69,4 @@ class goodsReceiptController {
   };
 }
 
-module.exports = goodsReceiptController;
+export default goodsReceiptController;

@@ -1,14 +1,13 @@
-require("dotenv").config();
-const cookieParser = require("cookie-parser");
+import "dotenv/config";
+import cookieParser from "cookie-parser";
+import express from "express";
+import cors from "cors";
 
-const express = require("express");
-const cors = require("cors");
-
-const authRoutes = require("./routes/auth.routes");
-const productRoutes = require("./routes/product.routes");
-const errorHandler = require("./middlewares/errorHandler");
-const goodsReceiptRoutes = require("./routes/goodsReceipt.routes");
-const goodsIssueRoutes = require("./routes/goodsIssue.routes");
+import authRoutes from "./routes/auth.routes.js";
+import productRoutes from "./routes/product.routes.js";
+import errorHandler from "./middlewares/errorHandler.js";
+import goodsReceiptRoutes from "./routes/goodsReceipt.routes.js";
+import goodsIssueRoutes from "./routes/goodsIssue.routes.js";
 
 const app = express();
 
@@ -29,4 +28,4 @@ app.use("/api/goods-receipts", goodsReceiptRoutes);
 
 app.use(errorHandler);
 
-module.exports = app;
+export default app;

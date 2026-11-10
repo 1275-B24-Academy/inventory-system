@@ -1,22 +1,22 @@
-const pool = require("./db");
+import pool from "./db.js";
 
-const ProductRepository = require("./repositories/product.repository");
-const ProductService = require("./services/product.service");
-const ProductController = require("./controllers/product.controller");
+import ProductRepository from "./repositories/product.repository.js";
+import ProductService from "./services/product.service.js";
+import ProductController from "./controllers/product.controller.js";
 
-const AuthService = require("./services/auth.service");
-const UserRepository = require("./repositories/user.repository");
-const AuthController = require("./controllers/auth.controller");
+import AuthService from "./services/auth.service.js";
+import UserRepository from "./repositories/user.repository.js";
+import AuthController from "./controllers/auth.controller.js";
 
-const GoodsReceiptService = require("./services/goodsReceipt.service");
-const GoodsReceiptRepository = require("./repositories/goodsReceipt.repository");
-const GoodsReceiptController = require("./controllers/goodsReceiptController");
+import GoodsReceiptService from "./services/goodsReceipt.service.js";
+import GoodsReceiptRepository from "./repositories/goodsReceipt.repository.js";
+import GoodsReceiptController from "./controllers/goodsReceiptController.js";
 
-const GoodsIssueService = require("./services/goodsIssue.service");
-const GoodsIssueRepository = require("./repositories/goodsIssue.repository");
-const GoodsIssueController = require("./controllers/goodsIssueController");
+import GoodsIssueService from "./services/goodsIssue.service.js";
+import GoodsIssueRepository from "./repositories/goodsIssue.repository.js";
+import GoodsIssueController from "./controllers/goodsIssueController.js";
 
-const RefreshTokenRepository = require("./repositories/refreshToken.repository");
+import RefreshTokenRepository from "./repositories/refreshToken.repository.js";
 
 // 1. Tạo repository.
 const userRepository = new UserRepository();
@@ -38,7 +38,7 @@ const productRepository = new ProductRepository();
 const productService = new ProductService(productRepository);
 const productController = new ProductController(productService);
 
-module.exports = {
+export {
   productController,
   authController,
   userRepository,

@@ -80,4 +80,4 @@ class GoodsReceiptService {
   }
 }
 
-module.exports = GoodsReceiptService;
+export default GoodsReceiptService;

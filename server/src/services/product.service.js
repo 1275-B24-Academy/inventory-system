@@ -98,5 +98,4 @@ class ProductService {
     return updatedProduct;
   }
 }
-
-module.exports = ProductService;
+export default ProductService;

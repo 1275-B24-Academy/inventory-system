@@ -1,4 +1,4 @@
-const { verifyAccessToken } = require("../utils/token.js");
+import { verifyAccessToken } from "../utils/token.js";
 function requireLogin(req, res, next) {
   const authorization = req.get("Authorization");
   const match = authorization?.match(/^Bearer\s+(\S+)$/i);
@@ -48,4 +48,4 @@ function requireLogin(req, res, next) {
   next();
 }
 
-module.exports = requireLogin;
+export default requireLogin;

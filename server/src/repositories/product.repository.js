@@ -1,4 +1,4 @@
-const pool = require("../db");
+import pool from "../db.js";
 
 class ProductRepository {
   async findAll() {
@@ -43,4 +43,4 @@ class ProductRepository {
   }
 }
 
-module.exports = ProductRepository;
+export default ProductRepository;

@@ -101,4 +101,4 @@ class RefreshTokenRepository {
   }
 }
 
-module.exports = RefreshTokenRepository;
+export default RefreshTokenRepository;

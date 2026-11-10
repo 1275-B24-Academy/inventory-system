@@ -1,4 +1,4 @@
-const { createAccessToken } = require("../utils/token");
+import { createAccessToken } from "../utils/token.js";
 class AuthController {
   constructor(authService) {
     this.authService = authService;
@@ -88,4 +88,4 @@ class AuthController {
     }
   };
 }
-module.exports = AuthController;
+export default AuthController;

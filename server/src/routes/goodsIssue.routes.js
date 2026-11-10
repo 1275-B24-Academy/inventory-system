@@ -1,10 +1,10 @@
-const express = require("express");
+import express from "express";
 
-const requireRoles = require("../middlewares/requireRoles");
-const requireLogin = require("../middlewares/requireLogin");
-const loadCurrentUser = require("../middlewares/loadCurrentUser");
+import requireRoles from "../middlewares/requireRoles.js";
+import requireLogin from "../middlewares/requireLogin.js";
+import loadCurrentUser from "../middlewares/loadCurrentUser.js";
 
-const { userRepository, goodsIssueController } = require("../container");
+import { userRepository, goodsIssueController } from "../container.js";
 
 const router = express.Router();
 
@@ -15,11 +15,13 @@ router.use(
   requireRoles(["admin"]),
 );
 
+// Danh sách phiếu xuất kho.
 router.get("/", goodsIssueController.getIssues);
+
 // Tạo phiếu xuất kho.
 router.post("/", goodsIssueController.createWithItems);
 
 // Xác nhận phiếu xuất kho.
 router.post("/:id/confirm", goodsIssueController.confirm);
 
-module.exports = router;
+export default router;

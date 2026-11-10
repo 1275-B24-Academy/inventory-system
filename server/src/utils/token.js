@@ -1,4 +1,4 @@
-const jwt = require("jsonwebtoken");
+import jwt from "jsonwebtoken";
 
 function createAccessToken(userId) {
   const secret = process.env.JWT_ACCESS_SECRET;
@@ -34,4 +34,4 @@ function verifyAccessToken(token) {
   });
 }
 
-module.exports = { createAccessToken, verifyAccessToken };
+export { createAccessToken, verifyAccessToken };
