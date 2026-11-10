@@ -37,6 +37,9 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run format:check
+      - name: Smoke check (server)
+        if: matrix.package == 'server'
+        run: npm run check
 
   build-client:
     name: Build (client)
