@@ -1,63 +1,45 @@
-# Inventory Management Template
+# Inventory Management
 
-Template học theo hướng **Thuật toán → Project thực tế → Computer Science**.
+Ứng dụng web quản lý kho cho doanh nghiệp nhỏ: đăng ký/đăng nhập, phân quyền admin/staff, quản lý sản phẩm, phiếu nhập và phiếu xuất kho.
 
-Trọng tâm: tổ chức file, chia layer, dependency injection đơn giản, business logic và phân quyền ở các bước sau. CRUD chỉ là template.
+Stack: **React + Vite + Material UI** (client), **Node.js + Express** (server), **PostgreSQL**, xác thực bằng **JWT** (access token + refresh token).
 
-## Frontend
+## Tổng quan
 
-```text
-client/src/
-├── components/products/
-│   ├── ProductCard.jsx
-│   └── ProductList.jsx
-├── pages/ProductsPage.jsx
-├── services/productApi.js
-├── App.jsx
-├── main.jsx
-└── index.css
+- **Client** là ứng dụng React một trang: hiển thị giao diện, giữ trạng thái đăng nhập và gọi API của server.
+- **Server** là REST API viết bằng Express, chia lớp theo luồng **Route → Middleware → Controller → Service → Repository → PostgreSQL**: middleware kiểm tra đăng nhập/quyền, service chứa nghiệp vụ, repository là nơi duy nhất viết SQL.
+- **Database** PostgreSQL lưu người dùng, sản phẩm, phiếu nhập/xuất và lịch sử tồn kho; cấu trúc bảng nằm trong `server/db/schema.sql`.
+- **Xác thực**: đăng nhập nhận access token (gửi kèm mỗi request) và refresh token (cookie) để tự gia hạn phiên.
+
+## Ảnh chụp màn hình
+
+| Đăng nhập                                      | Sản phẩm                                         |
+| ---------------------------------------------- | ------------------------------------------------ |
+| ![Trang đăng nhập](docs/screenshots/login.png) | ![Trang sản phẩm](docs/screenshots/products.png) |
+
+## Cách chạy
+
+Cần cài trước: [Node.js 22](https://nodejs.org/) và [PostgreSQL](https://www.postgresql.org/download/) (bản 14 trở lên).
+
+**1. Tạo database** (chạy ở thư mục gốc của repo):
+
+```bash
+createdb inventory
+psql -d inventory -f server/db/schema.sql
 ```
 
-## Backend
+> Trên Windows, nếu không có lệnh `createdb`/`psql`, mở **SQL Shell (psql)** đi kèm bộ cài, tạo DB bằng `CREATE DATABASE inventory;` rồi `\c inventory` và `\i server/db/schema.sql` (đường dẫn đầy đủ tới file).
 
-```text
-server/src/
-├── routes/product.routes.js
-├── controllers/product.controller.js
-├── services/product.service.js
-├── repositories/
-│   ├── product.repository.js
-│   └── inMemoryProduct.repository.js
-├── data/products.js
-├── middlewares/
-├── container.js
-├── app.js
-└── server.js
-```
-
-Luồng: Request → Route → Controller → Service → Repository → Data/DB.
-
-## SOLID
-
-- S: mỗi layer/file có một nhiệm vụ chính.
-- O: thay repository RAM bằng PostgreSQL mà Service ít phải sửa.
-- L: repository khác có thể thay InMemory repository nếu cùng contract.
-- I: repository chỉ có các hàm Product cần.
-- D: Service nhận repository từ bên ngoài qua dependency injection.
-
-## Chạy
-
-Backend:
+**2. Chạy server** (cổng 3000):
 
 ```bash
 cd server
+cp .env.example .env   # sửa DB_USER, DB_PASSWORD cho khớp Postgres trên máy
 npm install
 npm run dev
 ```
 
-Mở `http://localhost:3000/api/products` → ban đầu trả `[]`.
-
-Frontend:
+**3. Chạy client** (mở terminal khác, cổng 5173):
 
 ```bash
 cd client
@@ -65,54 +47,14 @@ npm install
 npm run dev
 ```
 
-Mở `http://localhost:5173`.
+Client không cần tạo `.env`: địa chỉ server khi dev đã có sẵn trong `client/.env.development`.
 
-## Lint & Format
-- **ESLint** bắt lỗi logic (biến không dùng, sai quy tắc React hooks...). Config: `client/eslint.config.js`, `server/eslint.config.js`.
-- **Prettier** lo định dạng (quote, indent, xuống dòng). Config chung: `.prettierrc.json` ở thư mục gốc.
-
-Chạy trong `client/` hoặc `server/`:
-```bash
-npm run lint          # kiểm tra lỗi
-npm run format        # tự format toàn bộ
-npm run format:check  # chỉ kiểm tra, không sửa (dùng cho CI)
-```
-
-VS Code: cài các extension được gợi ý (ESLint, Prettier, EditorConfig). Khi lưu file, code sẽ tự được format và tự sửa các lỗi lint sửa được.
-
-## Day 2
-
-Chỉ tập trung: ProductCard, Props, ProductList, GET/POST `/api/products`, Router.
-`productApi.js` để dành khi học fetch/Axios.
-
-## Lint & Format
-
-The project uses ESLint to check code quality and Prettier to maintain consistent code formatting.
-
-### Client
+**4. Dùng thử:** mở <http://localhost:5173>, bấm đăng ký tài khoản rồi đăng nhập. Tài khoản mới có quyền `staff`; muốn có quyền `admin` thì chạy:
 
 ```bash
-cd client
-npm ci
-npm run lint
-npm run format:check
+psql -d inventory -c "UPDATE users SET role = 'admin' WHERE email = 'email-cua-ban@example.com';"
 ```
 
-### Server
+## Tài liệu
 
-```bash
-cd server
-npm ci
-npm run lint
-npm run format:check
-```
-
-### VS Code Extensions
-
-The project recommends these extensions:
-
-- ESLint
-- Prettier - Code formatter
-- EditorConfig for VS Code
-
-Formatting uses LF line endings and two-space indentation.
+Chi tiết kiến trúc, các luồng chính và quy ước lint/format: xem [PROJECT_DESCRIPTION.md](PROJECT_DESCRIPTION.md).
