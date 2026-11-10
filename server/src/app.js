@@ -1,6 +1,8 @@
 require("dotenv").config();
 const cookieParser = require("cookie-parser");
 
+const fs = require("fs");
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
 
@@ -14,7 +16,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
     credentials: true,
   }),
 );
@@ -26,6 +28,16 @@ app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/goods-issues", goodsIssueRoutes);
 app.use("/api/goods-receipts", goodsReceiptRoutes);
+
+// Production: server serve luôn bản build của client -> chung domain, cookie refresh là first-party.
+const clientDist = path.join(__dirname, "../../client/dist");
+if (fs.existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+  // Mọi route không phải /api trả index.html để React Router xử lý (F5 không bị 404).
+  app.get(/^\/(?!api(\/|$)).*/, (req, res) => {
+    res.sendFile(path.join(clientDist, "index.html"));
+  });
+}
 
 app.use(errorHandler);
 
