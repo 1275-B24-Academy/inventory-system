@@ -1,38 +1,58 @@
-import pool from "../db.js";
+// Các cột trả về cho API (giống câu SELECT cũ, không có created_at).
+const productSelect = {
+  id: true,
+  name: true,
+  sku: true,
+  category: true,
+  supplier: true,
+  price: true,
+  stock: true,
+};
+
+// Prisma trả cột NUMERIC dưới dạng Decimal. Driver `pg` cũ trả chuỗi (ví dụ "15000.00"),
+// nên đổi về chuỗi 2 chữ số thập phân để JSON của API không đổi.
+function toProductResponse(product) {
+  return { ...product, price: product.price.toFixed(2) };
+}
 
 class ProductRepository {
+  constructor(prisma) {
+    this.prisma = prisma;
+  }
+
   async findAll() {
-    const result = await pool.query(
-      `SELECT id, name, sku, category, supplier, price, stock FROM products ORDER BY id`,
-    );
-    return result.rows;
+    const products = await this.prisma.product.findMany({
+      select: productSelect,
+      orderBy: { id: "asc" },
+    });
+    return products.map(toProductResponse);
   }
 
   async create(product) {
     const { name, sku, category, supplier, price, stock } = product;
-    const result = await pool.query(
-      `INSERT INTO products (name, sku, category, supplier, price, stock)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, name, sku, category, supplier, price, stock`,
-      [name, sku, category, supplier, price, stock],
-    );
-    return result.rows[0];
+    const created = await this.prisma.product.create({
+      data: { name, sku, category, supplier, price, stock },
+      select: productSelect,
+    });
+    return toProductResponse(created);
   }
+
   async update(id, product) {
     const { name, sku, category, supplier, price, stock } = product;
-    const result = await pool.query(
-      `UPDATE products
-      SET name = $1,
-          sku = $2,
-          category = $3,
-          supplier = $4,
-          price = $5,
-          stock = $6
-      WHERE id = $7
-      RETURNING id, name, sku, category, supplier, price, stock`,
-      [name, sku, category, supplier, price, stock, id],
-    );
-    return result.rows[0];
+    try {
+      const updated = await this.prisma.product.update({
+        where: { id },
+        data: { name, sku, category, supplier, price, stock },
+        select: productSelect,
+      });
+      return toProductResponse(updated);
+    } catch (error) {
+      // P2025: không có dòng nào để update -> trả undefined, service sẽ báo 404.
+      if (error.code === "P2025") {
+        return undefined;
+      }
+      throw error;
+    }
   }
 }
 

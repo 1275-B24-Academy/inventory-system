@@ -3,6 +3,16 @@ function errorHandler(error, req, res, next) {
     return next(error);
   }
 
+  // P2002: Prisma báo vi phạm UNIQUE. meta.modelName cho biết lỗi ở bảng nào.
+  if (error.code === "P2002") {
+    if (error.meta?.modelName === "Product") {
+      return res.status(409).json({
+        message: "SKU đã tồn tại",
+      });
+    }
+  }
+
+  // 23505: lỗi UNIQUE từ driver `pg`, cho các repository chưa chuyển sang Prisma.
   if (error.code === "23505") {
     if (error.constraint === "users_email_key") {
       return res.status(409).json({

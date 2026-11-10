@@ -1,4 +1,5 @@
 import pool from "./db.js";
+import prisma from "./prisma.js";
 
 import ProductRepository from "./repositories/product.repository.js";
 import ProductService from "./services/product.service.js";
@@ -34,7 +35,7 @@ const authController = new AuthController(authService);
 const goodsReceiptController = new GoodsReceiptController(goodsReceiptService);
 const goodsIssueController = new GoodsIssueController(goodsIssueService);
 
-const productRepository = new ProductRepository();
+const productRepository = new ProductRepository(prisma);
 const productService = new ProductService(productRepository);
 const productController = new ProductController(productService);
 
