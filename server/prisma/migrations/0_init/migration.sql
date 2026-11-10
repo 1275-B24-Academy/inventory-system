@@ -1,13 +1,12 @@
--- Schema suy ra từ các câu SQL trong server/src/repositories và validate trong services.
--- Chạy 1 lần trên DB trống:  psql "$DATABASE_URL" -f server/db/schema.sql
+-- Baseline: chép từ server/db/schema.sql cũ (bỏ BEGIN/COMMIT vì Prisma Migrate tự bọc transaction).
+-- Viết tay thay vì sinh bằng `prisma migrate diff` vì CHECK constraint không mô tả được
+-- trong schema.prisma, chỉ giữ được ở đây.
 --
 -- Ghi chú:
 -- - id dùng INTEGER (không BIGINT): node-pg trả BIGINT dạng string, còn code
 --   kiểm tra Number.isInteger(...) và client nhận id dạng number.
--- - Tên ràng buộc users_email_key, products_sku_key được errorHandler dùng để
---   trả 409 -> giữ nguyên tên mặc định của Postgres cho UNIQUE.
-
-BEGIN;
+-- - Tên ràng buộc UNIQUE giữ nguyên tên mặc định của Postgres (users_email_key,
+--   products_sku_key...), trùng với tên Prisma tự đặt.
 
 CREATE TABLE users (
   id            INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -108,8 +107,3 @@ CREATE UNIQUE INDEX stock_movements_receipt_item_key ON stock_movements (receipt
   WHERE receipt_item_id IS NOT NULL;
 CREATE UNIQUE INDEX stock_movements_issue_item_key ON stock_movements (issue_item_id)
   WHERE issue_item_id IS NOT NULL;
-
-COMMIT;
-
--- Sau khi đăng ký tài khoản qua giao diện, nâng quyền admin:
---   UPDATE users SET role = 'admin' WHERE email = 'you@example.com';

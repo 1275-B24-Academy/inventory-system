@@ -12,9 +12,14 @@
     "lint": "eslint .",
     "check": "node -e \"import('./src/app.js').then(() => process.exit(0)).catch(error => { console.error(error); process.exit(1); })\"",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "db:migrate": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
     "argon2": "^0.45.1",
     "connect-pg-simple": "^10.0.0",
     "cookie-parser": "^1.4.7",
@@ -23,7 +28,8 @@
     "express": "^5.1.0",
     "express-session": "^1.19.0",
     "jsonwebtoken": "^9.0.3",
-    "pg": "^8.23.0"
+    "pg": "^8.23.0",
+    "prisma": "^7.10.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
