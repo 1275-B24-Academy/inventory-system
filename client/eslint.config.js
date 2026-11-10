@@ -1,11 +1,13 @@
+
 import js from "@eslint/js";
 import globals from "globals";
+import react from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import { defineConfig, globalIgnores } from "eslint/config";
 
 export default defineConfig([
-  globalIgnores(["dist"]),
+  globalIgnores(["dist/**", "node_modules/**"]),
   {
     files: ["**/*.{js,jsx}"],
     extends: [
@@ -18,13 +20,16 @@ export default defineConfig([
       sourceType: "module",
       globals: globals.browser,
       parserOptions: {
-        ecmaFeatures: { jsx: true },
+        ecmaFeatures: {
+          jsx: true,
+        },
       },
     },
+    plugins: {
+      react,
+    },
     rules: {
-      // ESLint 9 không thấy component được dùng trong JSX,
-      // nên bỏ qua tên viết hoa để tránh báo nhầm "chưa dùng".
-      "no-unused-vars": ["error", { varsIgnorePattern: "^[A-Z_]" }],
+      "react/jsx-uses-vars": "error",
     },
   },
 ]);

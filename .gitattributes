@@ -1,3 +1,4 @@
+
 # Mọi file text dùng LF, kể cả khi checkout trên Windows (bỏ qua core.autocrlf)
 * text=auto eol=lf
 

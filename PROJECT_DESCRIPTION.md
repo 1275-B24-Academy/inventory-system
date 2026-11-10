@@ -1,199 +1,398 @@
-# Mô tả dự án Inventory Management
+# Inventory Management
 
-## 1. Cây thư mục
+## 1. Tổng quan dự án
 
-### Frontend
+Đây là hệ thống quản lý kho hàng gồm:
+
+- Frontend viết bằng React và Vite.
+- Backend viết bằng Node.js và Express.
+- Database PostgreSQL.
+- Giao diện sử dụng Material UI.
+- Xác thực bằng access token và refresh token.
+- Phân quyền theo vai trò người dùng.
+
+Kiến trúc chính:
+
+```text
+Frontend
+  React Page
+    Component
+      API Service
+        Backend API
+
+Backend
+  Route
+    Middleware
+      Controller
+        Service
+          Repository
+            PostgreSQL
+```
+
+## 2. Những chức năng đã hoàn thành
+
+### Xác thực và tài khoản
+
+- Đăng ký tài khoản.
+- Đăng nhập.
+- Đăng xuất.
+- Mã hóa mật khẩu bằng Argon2.
+- Tạo và kiểm tra access token.
+- Tạo, lưu trữ, xoay vòng và thu hồi refresh token.
+- Tự động refresh access token khi token hết hạn.
+- Lưu trạng thái đăng nhập ở Frontend.
+- Chuyển hướng người dùng chưa đăng nhập về trang Login.
+
+### Phân quyền
+
+- Vai trò `admin` có thể:
+  - Thêm sản phẩm.
+  - Cập nhật sản phẩm.
+  - Tạo phiếu nhập.
+  - Xác nhận phiếu nhập.
+- Người dùng thông thường có thể xem danh sách sản phẩm.
+- Backend kiểm tra quyền bằng middleware `requireRoles`.
+
+### Quản lý sản phẩm
+
+- Xem danh sách sản phẩm.
+- Thêm sản phẩm.
+- Cập nhật sản phẩm.
+- Kiểm tra tên, SKU, danh mục và nhà cung cấp.
+- Kiểm tra giá không âm.
+- Kiểm tra tồn kho là số nguyên không âm.
+- Lưu sản phẩm trong PostgreSQL.
+- Hiển thị thống kê:
+  - Tổng số sản phẩm.
+  - Sản phẩm sắp hết hàng.
+  - Sản phẩm hết hàng.
+
+### Quản lý phiếu nhập
+
+- Tạo phiếu nhập nháp.
+- Thêm nhiều sản phẩm vào phiếu nhập.
+- Kiểm tra sản phẩm không bị trùng trong cùng một phiếu.
+- Kiểm tra số lượng nhập là số nguyên dương.
+- Xác nhận phiếu nhập.
+- Cộng số lượng vào tồn kho sau khi xác nhận.
+- Ghi lịch sử biến động kho vào `stock_movements`.
+- Dùng transaction PostgreSQL để bảo đảm dữ liệu nhất quán.
+- Khóa dữ liệu khi xác nhận để tránh xác nhận trùng đồng thời.
+
+### Giao diện và trải nghiệm
+
+- Giao diện đăng nhập.
+- Giao diện đăng ký.
+- Giao diện quản lý sản phẩm.
+- Form thêm và sửa sản phẩm.
+- Bảng danh sách sản phẩm.
+- Hộp thoại xác nhận đăng xuất.
+- Thông báo thành công và lỗi.
+- Hiển thị trạng thái đang xử lý để tránh gửi request trùng.
+- Responsive layout bằng Material UI.
+
+## 3. Cấu trúc thư mục tổng thể
+
+```text
+inventory-template/
+├── PROJECT_DESCRIPTION.md
+├── README.md
+├── client/
+└── server/
+```
+
+## 4. Cấu trúc Frontend
+
+Thư mục Frontend: `client/`
 
 ```text
 client/
 ├── index.html
 ├── package.json
-├── package-lock.json
+├── eslint.config.js
 ├── vite.config.js
 └── src/
-    ├── App.jsx
     ├── main.jsx
+    ├── App.jsx
     ├── index.css
+    │
     ├── app/
     │   └── theme.js
+    │
+    ├── auth/
+    │   ├── AuthContext.js
+    │   ├── AuthProvider.jsx
+    │   └── useAuth.js
+    │
     ├── components/
+    │   ├── MainLayout.jsx
+    │   ├── auth/
+    │   │   └── AuthLayout.jsx
     │   └── products/
     │       ├── ProductForm.jsx
     │       ├── ProductRow.jsx
     │       ├── ProductTable.jsx
     │       ├── StatCard.jsx
     │       └── StatCard.css
+    │
+    ├── notifications/
+    │   ├── NotificationProvider.jsx
+    │   └── useNotification.js
+    │
     ├── pages/
+    │   ├── Login.jsx
+    │   ├── Register.jsx
     │   └── ProductsPage.jsx
+    │
     └── services/
+        ├── apiClient.js
+        ├── authApi.js
         └── productApi.js
 ```
 
-### Backend
+### Nhiệm vụ của các nhóm file Frontend
+
+#### File khởi động và cấu hình
+
+- `main.jsx`: tạo React root và render ứng dụng.
+- `App.jsx`: cấu hình React Router, ThemeProvider và AuthProvider.
+- `index.css`: CSS toàn cục.
+- `theme.js`: cấu hình theme Material UI.
+- `vite.config.js`: cấu hình Vite.
+
+#### `auth/`
+
+- `AuthContext.js`: tạo context chứa trạng thái xác thực.
+- `AuthProvider.jsx`: quản lý user, access token, login, logout và refresh token.
+- `useAuth.js`: hook để các component sử dụng AuthContext.
+
+#### `pages/`
+
+- `Login.jsx`: form đăng nhập.
+- `Register.jsx`: form đăng ký.
+- `ProductsPage.jsx`: tải, hiển thị, thêm và cập nhật sản phẩm.
+
+#### `components/`
+
+- `MainLayout.jsx`: layout chính sau khi đăng nhập.
+- `AuthLayout.jsx`: layout dùng chung cho Login và Register.
+- `ProductForm.jsx`: form nhập dữ liệu sản phẩm.
+- `ProductTable.jsx`: bảng danh sách sản phẩm.
+- `ProductRow.jsx`: hiển thị từng sản phẩm.
+- `StatCard.jsx`: hiển thị số liệu thống kê.
+
+#### `services/`
+
+- `apiClient.js`: gửi request có access token và tự retry sau khi refresh token.
+- `authApi.js`: gọi các API đăng ký, đăng nhập, refresh và logout.
+- `productApi.js`: gọi API lấy, thêm và cập nhật sản phẩm.
+
+#### `notifications/`
+
+- `NotificationProvider.jsx`: cung cấp hệ thống thông báo.
+- `useNotification.js`: hook để hiển thị thông báo.
+
+## 5. Cấu trúc Backend
+
+Thư mục Backend: `server/`
 
 ```text
 server/
 ├── package.json
-├── package-lock.json
+├── eslint.config.js
+├── test-db.js
 └── src/
     ├── app.js
     ├── server.js
     ├── container.js
+    ├── db.js
+    │
     ├── controllers/
-    │   └── product.controller.js
-    ├── data/
-    │   └── products.js
+    │   ├── auth.controller.js
+    │   ├── product.controller.js
+    │   └── goodsReceiptController.js
+    │
     ├── middlewares/
     │   ├── errorHandler.js
-    │   └── notFound.js
+    │   ├── loadCurrentUser.js
+    │   ├── notFound.js
+    │   ├── requireLogin.js
+    │   └── requireRoles.js
+    │
     ├── repositories/
+    │   ├── user.repository.js
+    │   ├── refreshToken.repository.js
     │   ├── product.repository.js
-    │   └── inMemoryProduct.repository.js
+    │   └── goodsReceipt.repository.js
+    │
     ├── routes/
-    │   └── product.routes.js
-    └── services/
-        └── product.service.js
+    │   ├── auth.routes.js
+    │   ├── product.routes.js
+    │   └── goodsReceipt.routes.js
+    │
+    ├── services/
+    │   ├── auth.service.js
+    │   ├── product.service.js
+    │   └── goodsReceipt.service.js
+    │
+    └── utils/
+        ├── token.js
+        └── refreshToken.js
 ```
 
-`node_modules` được bỏ qua.
+### Nhiệm vụ của các nhóm file Backend
 
-## 2. Công nghệ và thư viện chính
+#### File khởi động và cấu hình
+
+- `server.js`: khởi động HTTP server.
+- `app.js`: tạo Express app, cấu hình CORS, JSON body, cookie và routes.
+- `db.js`: tạo kết nối PostgreSQL bằng `pg`.
+- `container.js`: khởi tạo repository, service, controller và inject dependency.
+- `test-db.js`: kiểm tra kết nối database.
+
+#### `routes/`
+
+Định nghĩa endpoint và gắn middleware:
+
+- `auth.routes.js`:
+  - `POST /api/auth/register`
+  - `POST /api/auth/login`
+  - `POST /api/auth/refresh`
+  - `POST /api/auth/logout`
+- `product.routes.js`:
+  - `GET /api/products`
+  - `POST /api/products`
+  - `PUT /api/products/:id`
+- `goodsReceipt.routes.js`:
+  - `POST /api/goods-receipts`
+  - `POST /api/goods-receipts/:id/confirm`
+
+#### `controllers/`
+
+Nhận request từ route, gọi service và trả response:
+
+- `auth.controller.js`: xử lý đăng ký, đăng nhập, refresh và logout.
+- `product.controller.js`: xử lý lấy, thêm và cập nhật sản phẩm.
+- `goodsReceiptController.js`: xử lý tạo và xác nhận phiếu nhập.
+
+#### `services/`
+
+Chứa business logic và validation:
+
+- `auth.service.js`: kiểm tra tài khoản, mã hóa mật khẩu và xử lý token.
+- `product.service.js`: kiểm tra và xử lý dữ liệu sản phẩm.
+- `goodsReceipt.service.js`: kiểm tra phiếu nhập và các dòng sản phẩm.
+
+#### `repositories/`
+
+Chịu trách nhiệm truy vấn PostgreSQL:
+
+- `user.repository.js`: truy vấn người dùng.
+- `refreshToken.repository.js`: lưu và quản lý refresh token.
+- `product.repository.js`: truy vấn sản phẩm.
+- `goodsReceipt.repository.js`: tạo phiếu nhập, cập nhật tồn kho và lưu lịch sử kho.
+
+#### `middlewares/`
+
+- `requireLogin.js`: kiểm tra access token.
+- `loadCurrentUser.js`: lấy user hiện tại từ database.
+- `requireRoles.js`: kiểm tra vai trò.
+- `errorHandler.js`: xử lý lỗi tập trung.
+- `notFound.js`: xử lý endpoint không tồn tại.
+
+#### `utils/`
+
+- `token.js`: tạo và xác minh access token.
+- `refreshToken.js`: tạo refresh token và hash token trước khi lưu.
+
+## 6. Cách Frontend và Backend hoạt động cùng nhau
+
+### Luồng đăng nhập
+
+```text
+Login.jsx
+  → authApi.js
+    → POST /api/auth/login
+      → auth.routes.js
+        → auth.controller.js
+          → auth.service.js
+            → user.repository.js
+              → PostgreSQL
+```
+
+Backend trả về thông tin user và access token. Frontend lưu trạng thái user và access token để sử dụng cho các request tiếp theo.
+
+### Luồng lấy danh sách sản phẩm
+
+```text
+ProductsPage.jsx
+  → productApi.js
+    → apiClient.js
+      → GET /api/products
+        → requireLogin
+          → loadCurrentUser
+            → product.controller.js
+              → product.service.js
+                → product.repository.js
+                  → PostgreSQL
+```
+
+### Luồng thêm hoặc cập nhật sản phẩm
+
+```text
+ProductForm.jsx
+  → ProductsPage.jsx
+    → productApi.js
+      → POST/PUT /api/products
+        → requireLogin
+          → requireRoles(["admin"])
+            → Controller
+              → Service validation
+                → Repository
+                  → PostgreSQL
+```
+
+### Luồng xác nhận phiếu nhập
+
+```text
+POST /api/goods-receipts/:id/confirm
+  → requireLogin
+    → requireRoles(["admin"])
+      → goodsReceiptController
+        → goodsReceiptService
+          → goodsReceiptRepository
+            → Transaction PostgreSQL
+              → Cộng tồn kho
+              → Ghi stock_movements
+              → Đổi trạng thái phiếu thành confirmed
+```
+
+## 7. Công nghệ sử dụng
 
 ### Frontend
 
-- React `19.1.1`
-- React DOM
-- Vite `7.1.7`
-- Material UI `@mui/material`
-- Material UI Icons
-- Emotion React và Emotion Styled
-- JavaScript JSX
-- Fetch API của trình duyệt để gọi backend
-
-Thông tin dependency nằm trong `client/package.json`. React được khởi tạo tại `client/src/main.jsx`, còn Vite được cấu hình tại `client/vite.config.js`.
+- React.
+- React DOM.
+- React Router.
+- Vite.
+- Material UI.
+- Emotion.
+- Fetch API.
 
 ### Backend
 
-- Node.js
-- Express `5.1.0`
-- CORS `2.8.5`
-- CommonJS với `require` và `module.exports`
+- Node.js.
+- Express.
+- PostgreSQL.
+- `pg`.
+- Argon2.
+- JSON Web Token.
+- Cookie Parser.
+- Express Session.
+- CORS.
+- Dotenv.
 
-Backend khởi tạo Express tại `server/src/app.js` và mở server tại `server/src/server.js`.
-
-## 3. Luồng GET và POST `/api/products`
-
-### Luồng GET `/api/products`
-
-1. `client/src/main.jsx` gọi `createRoot()` để render component `App`.
-2. `client/src/App.jsx` render component `ProductsPage`.
-3. Trong `client/src/pages/ProductsPage.jsx`, `useEffect()` gọi hàm `getProducts()`.
-4. Hàm `getProducts()` trong `client/src/services/productApi.js` gửi request:
-
-   ```text
-   GET http://localhost:3000/api/products/
-   ```
-
-5. `server/src/server.js` khởi động Express tại port `3000`.
-6. `server/src/app.js` đăng ký router với prefix `/api/products`.
-7. Handler `router.get("/")` trong `server/src/routes/product.routes.js` trả về mảng `products` bằng `res.json(products)`.
-8. FE nhận dữ liệu và gọi `setProducts(data)` trong `ProductsPage`.
-9. `client/src/components/products/ProductTable.jsx` lặp qua danh sách sản phẩm và render từng sản phẩm bằng `ProductRow`.
-
-### Luồng POST `/api/products`
-
-1. Người dùng nhập dữ liệu trong `ProductForm` tại `client/src/components/products/ProductForm.jsx`.
-2. Khi submit, hàm `handleSubmit()` gọi callback `onSubmit(formData)`.
-3. Callback này là `handleAddProduct()` trong `client/src/pages/ProductsPage.jsx`.
-4. `handleAddProduct()` chuyển `price` sang số thực bằng `parseFloat()` và `stock` sang số nguyên bằng `parseInt()`.
-5. Hàm `createProduct()` trong `client/src/services/productApi.js` gửi request:
-
-   ```text
-   POST http://localhost:3000/api/products/
-   ```
-
-   Request có header `Content-Type: application/json` và body JSON của sản phẩm.
-
-6. Handler `router.post("/")` trong `server/src/routes/product.routes.js` thực hiện:
-   - Kiểm tra `name`, `sku`, `category`, `supplier`.
-   - Kiểm tra `price` không âm.
-   - Kiểm tra `stock` không âm.
-   - Kiểm tra SKU chưa tồn tại.
-   - Tạo sản phẩm mới.
-   - Thêm sản phẩm vào mảng `products`.
-   - Trả về HTTP `201` cùng sản phẩm mới.
-
-7. FE nhận kết quả trong `handleAddProduct()` và thêm sản phẩm vào state bằng `setProducts()`.
-
-`ProductController`, `ProductService` và `container.js` có tồn tại nhưng không được sử dụng trong luồng thực tế hiện tại. `server/src/app.js` import trực tiếp router từ `server/src/routes/product.routes.js`.
-
-## 4. Backend lưu sản phẩm ở đâu?
-
-Sản phẩm hiện được lưu trong một mảng nằm trong bộ nhớ RAM:
-
-- Mảng được khai báo tại `server/src/data/products.js`.
-- Route GET và POST trong `server/src/routes/product.routes.js` import trực tiếp mảng này.
-- Khi POST, sản phẩm được thêm bằng `products.push(newProduct)`.
-
-Hiện tại backend không lưu vào file và không sử dụng database.
-
-Dữ liệu tạo thêm sẽ mất khi khởi động lại server, vì khi Node.js chạy lại, module `server/src/data/products.js` được nạp lại với dữ liệu ban đầu.
-
-README có ghi endpoint ban đầu trả về `[]`, nhưng code thực tế hiện có sẵn 3 sản phẩm trong `server/src/data/products.js`.
-
-## 5. Cấu trúc sản phẩm và cách tạo ID
-
-Mỗi sản phẩm thực tế có các trường:
-
-```js
-{
-  id,
-  name,
-  sku,
-  category,
-  supplier,
-  price,
-  stock
-}
-```
-
-Dữ liệu mẫu nằm trong `server/src/data/products.js`. Việc hiển thị các trường này được thực hiện tại `client/src/components/products/ProductRow.jsx`.
-
-ID được tạo trong handler POST tại `server/src/routes/product.routes.js`:
-
-```js
-id: products.length + 1
-```
-
-ID dựa trên số lượng phần tử hiện có trong mảng, không phải ID từ database.
-
-Repository in-memory cũng có cách tạo ID tương tự trong `server/src/repositories/inMemoryProduct.repository.js`, nhưng repository này không thuộc luồng đang chạy.
-
-## 6. Database, biến môi trường và migration/schema
-
-### Database
-
-Chưa tìm thấy cấu hình kết nối hoặc thư viện database. `server/package.json` chỉ có `express` và `cors`.
-
-Chưa tìm thấy PostgreSQL, MySQL, MongoDB, SQLite, Prisma, Sequelize, TypeORM hoặc thư viện database tương tự.
-
-### Biến môi trường
-
-Chưa tìm thấy file `.env` hoặc code sử dụng `process.env`.
-
-File `.gitignore` có khai báo bỏ qua `.env`, nhưng hiện không tìm thấy file `.env` trong cấu trúc dự án.
-
-Port backend và địa chỉ CORS đang được viết trực tiếp trong code:
-
-- Port `3000`: `server/src/server.js`
-- Origin `http://localhost:5173`: `server/src/app.js`
-- API URL `http://localhost:3000/api/products/`: `client/src/services/productApi.js`
-
-### Migration và schema
-
-Chưa tìm thấy file migration, schema database hoặc cấu hình ORM.
-
-## 7. Lệnh chạy FE và BE
+## 8. Chạy dự án
 
 ### Backend
 
@@ -203,18 +402,12 @@ npm install
 npm run dev
 ```
 
-Script `dev` chạy `node --watch src/server.js`.
-
-Có thể chạy dạng thông thường:
+Hoặc:
 
 ```bash
 cd server
 npm start
 ```
-
-Script `start` chạy `node src/server.js`.
-
-Các lệnh được khai báo trong `server/package.json`.
 
 ### Frontend
 
@@ -224,10 +417,41 @@ npm install
 npm run dev
 ```
 
-Frontend chạy bằng Vite, thường tại:
+Frontend thường chạy tại `http://localhost:5173`.
 
-```text
-http://localhost:5173
+Backend chạy tại `http://localhost:3000`.
+
+## 9. Kiểm tra code
+
+Trong thư mục `client/` hoặc `server/`:
+
+```bash
+npm run lint
+npm run format:check
 ```
 
-Các script FE nằm trong `client/package.json`.
+Tự động format:
+
+```bash
+npm run format
+```
+
+## 10. Ghi chú cấu hình
+
+Backend sử dụng các biến môi trường cho PostgreSQL:
+
+```text
+DB_HOST
+DB_PORT
+DB_NAME
+DB_USER
+DB_PASSWORD
+```
+
+Frontend hiện gọi Backend tại:
+
+```text
+http://localhost:3000
+```
+
+Tài liệu này là file mô tả tổng hợp chính của dự án. Khi cấu trúc hoặc chức năng thay đổi, cần cập nhật lại file này.
