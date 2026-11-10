@@ -11,12 +11,11 @@ class ProductController {
     } catch (error) {
       return next(error);
     }
-  }
+  };
 
   createProduct = async (req, res, next) => {
     try {
-      const createdProduct =
-        await this.productService.createProduct(req.body);
+      const createdProduct = await this.productService.createProduct(req.body);
 
       return res.status(201).json({
         ...createdProduct,
@@ -25,21 +24,21 @@ class ProductController {
     } catch (error) {
       return next(error);
     }
-  }
+  };
   updateProduct = async (req, res, next) => {
-    try{
+    try {
       const updatedProduct = await this.productService.updateProduct(
         req.params.id,
-        req.body
-        );
-       return res.json({
+        req.body,
+      );
+      return res.json({
         ...updatedProduct,
         price: Number(updatedProduct.price),
-       });    
-    }catch(error) {
+      });
+    } catch (error) {
       return next(error);
     }
-  }
+  };
 }
 
 module.exports = ProductController;

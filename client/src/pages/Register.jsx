@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import {
-  Link as RouterLink,
-  useNavigate,
-} from "react-router-dom";
-import {
-  Alert, Button, Link, Stack, TextField, Typography,
+  Alert,
+  Button,
+  Link,
+  Stack,
+  TextField,
+  Typography,
 } from "@mui/material";
 
 import AuthLayout from "../components/auth/AuthLayout";

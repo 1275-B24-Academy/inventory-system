@@ -1,6 +1,4 @@
-import {
-  Chip, IconButton, TableCell, TableRow, Tooltip,
-} from "@mui/material";
+import { Chip, IconButton, TableCell, TableRow, Tooltip } from "@mui/material";
 import EditOutlined from "@mui/icons-material/EditOutlined";
 
 const currencyFormatter = new Intl.NumberFormat("vi-VN", {
@@ -9,20 +7,19 @@ const currencyFormatter = new Intl.NumberFormat("vi-VN", {
 });
 
 export default function ProductRow({
-  product, onEdit, manageProducts, disabled,
+  product,
+  onEdit,
+  manageProducts,
+  disabled,
 }) {
   const stock = Number(product.stock);
   const stockColor = stock === 0 ? "error" : stock <= 5 ? "warning" : "success";
 
   return (
     <TableRow hover>
-      <TableCell sx={{ color: "text.secondary" }}>
-        {product.id}
-      </TableCell>
+      <TableCell sx={{ color: "text.secondary" }}>{product.id}</TableCell>
 
-      <TableCell sx={{ fontWeight: 600 }}>
-        {product.name}
-      </TableCell>
+      <TableCell sx={{ fontWeight: 600 }}>{product.name}</TableCell>
 
       <TableCell>{product.sku}</TableCell>
       <TableCell>{product.category}</TableCell>
