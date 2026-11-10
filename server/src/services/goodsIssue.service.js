@@ -68,4 +68,4 @@ class GoodsIssueService {
     return this.goodsIssueRepository.confirm(issueId, confirmedBy);
   }
 }
-module.exports = GoodsIssueService;
+export default GoodsIssueService;

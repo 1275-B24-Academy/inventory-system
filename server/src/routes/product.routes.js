@@ -1,10 +1,9 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const { productController, userRepository } = require("../container");
-
-const requireLogin = require("../middlewares/requireLogin");
-const loadCurrentUser = require("../middlewares/loadCurrentUser");
-const requireRoles = require("../middlewares/requireRoles");
+import { productController, userRepository } from "../container.js";
+import requireLogin from "../middlewares/requireLogin.js";
+import loadCurrentUser from "../middlewares/loadCurrentUser.js";
+import requireRoles from "../middlewares/requireRoles.js";
 
 router.use(requireLogin, loadCurrentUser(userRepository));
 
@@ -14,4 +13,4 @@ router.post("/", requireRoles(["admin"]), productController.createProduct);
 
 router.put("/:id", requireRoles(["admin"]), productController.updateProduct);
 
-module.exports = router;
+export default router;

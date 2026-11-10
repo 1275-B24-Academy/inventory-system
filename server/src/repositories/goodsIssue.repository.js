@@ -1,4 +1,4 @@
-const pool = require("../db");
+import pool from "../db.js";
 
 class GoodsIssueRepository {
   // Tạo phiếu xuất nháp kèm danh sách sản phẩm.
@@ -166,4 +166,4 @@ class GoodsIssueRepository {
   }
 }
 
-module.exports = GoodsIssueRepository;
+export default GoodsIssueRepository;

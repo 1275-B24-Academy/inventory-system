@@ -1,5 +1,7 @@
-require("dotenv").config();
-const { Pool } = require("pg");
+import "dotenv/config";
+import pg from "pg";
+
+const { Pool } = pg;
 
 // Production (Render + Neon): dùng DATABASE_URL, SSL bật qua `?sslmode=require` trong chuỗi.
 // Local: dùng các biến DB_* riêng lẻ.
@@ -13,4 +15,4 @@ const pool = process.env.DATABASE_URL
       password: process.env.DB_PASSWORD,
     });
 
-module.exports = pool;
+export default pool;

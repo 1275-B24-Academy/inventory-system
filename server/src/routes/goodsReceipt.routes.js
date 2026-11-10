@@ -1,8 +1,9 @@
-const express = require("express");
-const requireRoles = require("../middlewares/requireRoles");
-const requireLogin = require("../middlewares/requireLogin");
-const loadCurrentUser = require("../middlewares/loadCurrentUser");
-const { userRepository, goodsReceiptController } = require("../container");
+import express from "express";
+import requireRoles from "../middlewares/requireRoles.js";
+import requireLogin from "../middlewares/requireLogin.js";
+import loadCurrentUser from "../middlewares/loadCurrentUser.js";
+import { userRepository, goodsReceiptController } from "../container.js";
+
 const router = express.Router();
 
 router.use(
@@ -14,4 +15,4 @@ router.use(
 router.post("/", goodsReceiptController.createWithItems);
 router.post("/:id/confirm", goodsReceiptController.confirm);
 
-module.exports = router;
+export default router;
