@@ -24,6 +24,12 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
+// Liveness: chỉ báo process còn sống, KHÔNG query DB (để Neon được scale-to-zero).
+// Đặt trước /api và trước route serve client, nếu không sẽ bị trả index.html.
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/goods-issues", goodsIssueRoutes);
