@@ -5,6 +5,7 @@ const fs = require("fs");
 const path = require("path");
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
 
 const authRoutes = require("./routes/auth.routes");
 const productRoutes = require("./routes/product.routes");
@@ -13,6 +14,8 @@ const goodsReceiptRoutes = require("./routes/goodsReceipt.routes");
 const goodsIssueRoutes = require("./routes/goodsIssue.routes");
 
 const app = express();
+
+app.use(helmet());
 
 app.use(
   cors({
