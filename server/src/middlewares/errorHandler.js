@@ -25,10 +25,7 @@ function errorHandler(error, req, res, next) {
   }
 
   return res.status(statusCode).json({
-    message:
-      statusCode >= 500
-        ? "Lỗi server, vui lòng thử lại"
-        : error.message,
+    message: statusCode >= 500 ? "Lỗi server, vui lòng thử lại" : error.message,
   });
 }
 

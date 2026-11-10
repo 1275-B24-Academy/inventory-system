@@ -5,7 +5,7 @@ function requireRoles(allowedRoles) {
     if (!allowedRoles.includes(userRole)) {
       return res.status(403).json({
         message: "Bạn không có quyền thực hiện thao tác này",
-        code: "FORBIDDEN"
+        code: "FORBIDDEN",
       });
     }
 

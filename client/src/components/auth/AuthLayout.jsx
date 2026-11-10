@@ -49,7 +49,11 @@ export default function AuthLayout({ title, subtitle, children }) {
             <Typography component="h1" variant="h5" textAlign="center">
               {title}
             </Typography>
-            <Typography color="text.secondary" textAlign="center" variant="body2">
+            <Typography
+              color="text.secondary"
+              textAlign="center"
+              variant="body2"
+            >
               {subtitle}
             </Typography>
           </Stack>

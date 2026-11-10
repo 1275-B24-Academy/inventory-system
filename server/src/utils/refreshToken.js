@@ -5,10 +5,7 @@ function createRefreshToken() {
 }
 
 function hashRefreshToken(token) {
-    return crypto
-        .createHash("sha256")
-        .update(token)
-        .digest("hex");
+  return crypto.createHash("sha256").update(token).digest("hex");
 }
 
 module.exports = { createRefreshToken, hashRefreshToken };

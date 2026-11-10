@@ -3,7 +3,7 @@ const pool = require("./src/db");
 async function testConnection() {
   try {
     const result = await pool.query(
-      "SELECT current_database() AS database_name"
+      "SELECT current_database() AS database_name",
     );
 
     console.log("Đã kết nối:", result.rows[0].database_name);

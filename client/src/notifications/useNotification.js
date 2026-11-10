@@ -6,9 +6,7 @@ export function useNotification() {
   const context = useContext(NotificationContext);
 
   if (context === null) {
-    throw new Error(
-      "useNotification phải nằm trong NotificationProvider."
-    );
+    throw new Error("useNotification phải nằm trong NotificationProvider.");
   }
 
   return context;
