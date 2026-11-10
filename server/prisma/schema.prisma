@@ -1,0 +1,147 @@
+// Nơi duy nhất mô tả bảng của database.
+// Sửa file này xong thì tạo migration: npm run db:migrate:dev -- --name add_xxx
+//
+// Quy ước:
+// - Model PascalCase, @@map về tên bảng snake_case.
+// - Field giữ snake_case giống cột -> JSON API trả về không đổi so với lúc dùng SQL thuần.
+// - CHECK constraint KHÔNG viết được ở đây: chúng nằm trong migration.sql
+//   (xem prisma/migrations/0_init/migration.sql).
+
+generator client {
+  // prisma-client-js sinh code JavaScript, server import trực tiếp được.
+  // (Generator mới "prisma-client" chỉ sinh TypeScript, cần thêm bước build.)
+  provider        = "prisma-client-js"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  name          String
+  email         String   @unique
+  password_hash String
+  role          String   @default("staff") // CHECK: admin | staff
+  status        String   @default("active") // CHECK: pending | active | locked
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+
+  refresh_tokens           RefreshToken[]
+  created_goods_receipts   GoodsReceipt[] @relation("GoodsReceiptCreatedBy")
+  confirmed_goods_receipts GoodsReceipt[] @relation("GoodsReceiptConfirmedBy")
+  created_goods_issues     GoodsIssue[]   @relation("GoodsIssueCreatedBy")
+  confirmed_goods_issues   GoodsIssue[]   @relation("GoodsIssueConfirmedBy")
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  token_hash String    @unique // SHA-256 hex của refresh token
+  family_id  String    @db.Uuid // chung cho chuỗi token xoay vòng từ 1 lần đăng nhập
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  expires_at DateTime  @db.Timestamptz(6)
+  revoked_at DateTime? @db.Timestamptz(6)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([family_id])
+  @@index([user_id])
+  @@map("refresh_tokens")
+}
+
+model Product {
+  id         Int      @id @default(autoincrement())
+  name       String
+  sku        String   @unique
+  category   String
+  supplier   String
+  price      Decimal  @default(0) @db.Decimal(14, 2) // CHECK: >= 0
+  stock      Int      @default(0) // CHECK: >= 0
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  goods_receipt_items GoodsReceiptItem[]
+  goods_issue_items   GoodsIssueItem[]
+
+  @@map("products")
+}
+
+// Phiếu nhập
+model GoodsReceipt {
+  id           Int       @id @default(autoincrement())
+  status       String    @default("draft") // CHECK: draft | confirmed
+  created_by   Int
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+  confirmed_by Int?
+  confirmed_at DateTime? @db.Timestamptz(6)
+
+  creator   User               @relation("GoodsReceiptCreatedBy", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  confirmer User?              @relation("GoodsReceiptConfirmedBy", fields: [confirmed_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  items     GoodsReceiptItem[]
+
+  @@map("goods_receipts")
+}
+
+model GoodsReceiptItem {
+  id         Int @id @default(autoincrement())
+  receipt_id Int
+  product_id Int
+  quantity   Int // CHECK: > 0
+
+  receipt        GoodsReceipt   @relation(fields: [receipt_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  product        Product        @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  stock_movement StockMovement?
+
+  // Một sản phẩm chỉ xuất hiện một lần trong cùng phiếu.
+  @@unique([receipt_id, product_id], map: "goods_receipt_items_receipt_product_key")
+  @@map("goods_receipt_items")
+}
+
+// Phiếu xuất
+model GoodsIssue {
+  id           Int       @id @default(autoincrement())
+  status       String    @default("draft") // CHECK: draft | confirmed
+  created_by   Int
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+  confirmed_by Int?
+  confirmed_at DateTime? @db.Timestamptz(6)
+
+  creator   User             @relation("GoodsIssueCreatedBy", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  confirmer User?            @relation("GoodsIssueConfirmedBy", fields: [confirmed_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  items     GoodsIssueItem[]
+
+  @@map("goods_issues")
+}
+
+model GoodsIssueItem {
+  id         Int @id @default(autoincrement())
+  issue_id   Int
+  product_id Int
+  quantity   Int // CHECK: > 0
+
+  issue          GoodsIssue     @relation(fields: [issue_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  product        Product        @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  stock_movement StockMovement?
+
+  @@unique([issue_id, product_id], map: "goods_issue_items_issue_product_key")
+  @@map("goods_issue_items")
+}
+
+// Lịch sử biến động kho: mỗi dòng gắn với đúng 1 dòng phiếu nhập HOẶC phiếu xuất.
+// quantity luôn dương; chiều (+/-) suy ra từ cột nào khác NULL.
+// CHECK: quantity > 0, đúng 1 trong 2 cột receipt_item_id / issue_item_id khác NULL.
+model StockMovement {
+  id              Int      @id @default(autoincrement())
+  receipt_item_id Int?     @unique(map: "stock_movements_receipt_item_key", where: raw("(receipt_item_id IS NOT NULL)"))
+  issue_item_id   Int?     @unique(map: "stock_movements_issue_item_key", where: raw("(issue_item_id IS NOT NULL)"))
+  quantity        Int
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  receipt_item GoodsReceiptItem? @relation(fields: [receipt_item_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  issue_item   GoodsIssueItem?   @relation(fields: [issue_item_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("stock_movements")
+}

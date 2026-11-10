@@ -3,3 +3,4 @@ reports/
 coverage/
 package-lock.json
 .env
+src/generated/

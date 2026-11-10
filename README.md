@@ -8,7 +8,7 @@ Stack: **React + Vite + Material UI** (client), **Node.js + Express** (server), 
 
 - **Client** là ứng dụng React một trang: hiển thị giao diện, giữ trạng thái đăng nhập và gọi API của server.
 - **Server** là REST API viết bằng Express, chia lớp theo luồng **Route → Middleware → Controller → Service → Repository → PostgreSQL**: middleware kiểm tra đăng nhập/quyền, service chứa nghiệp vụ, repository là nơi duy nhất viết SQL.
-- **Database** PostgreSQL lưu người dùng, sản phẩm, phiếu nhập/xuất và lịch sử tồn kho; cấu trúc bảng nằm trong `server/db/schema.sql`.
+- **Database** PostgreSQL lưu người dùng, sản phẩm, phiếu nhập/xuất và lịch sử tồn kho; cấu trúc bảng mô tả trong `server/prisma/schema.prisma`, mọi thay đổi bảng đi qua **migration** trong `server/prisma/migrations/` (dùng [Prisma Migrate](https://www.prisma.io/docs/orm/prisma-migrate)).
 - **Xác thực**: đăng nhập nhận access token (gửi kèm mỗi request) và refresh token (cookie) để tự gia hạn phiên.
 
 ## Ảnh chụp màn hình
@@ -21,23 +21,25 @@ Stack: **React + Vite + Material UI** (client), **Node.js + Express** (server), 
 
 Cần cài trước: [Node.js 22](https://nodejs.org/) và [PostgreSQL](https://www.postgresql.org/download/) (bản 14 trở lên).
 
-**1. Tạo database** (chạy ở thư mục gốc của repo):
+**1. Tạo database trống:**
 
 ```bash
 createdb inventory
-psql -d inventory -f server/db/schema.sql
 ```
 
-> Trên Windows, nếu không có lệnh `createdb`/`psql`, mở **SQL Shell (psql)** đi kèm bộ cài, tạo DB bằng `CREATE DATABASE inventory;` rồi `\c inventory` và `\i server/db/schema.sql` (đường dẫn đầy đủ tới file).
+> Trên Windows, nếu không có lệnh `createdb`, mở **SQL Shell (psql)** đi kèm bộ cài rồi chạy `CREATE DATABASE inventory;`.
 
-**2. Chạy server** (cổng 3000):
+**2. Tạo bảng và chạy server** (cổng 3000):
 
 ```bash
 cd server
-cp .env.example .env   # sửa DB_USER, DB_PASSWORD cho khớp Postgres trên máy
-npm install
+cp .env.example .env   # sửa DATABASE_URL cho khớp Postgres trên máy
+npm install            # tự chạy `prisma generate` để sinh Prisma Client
+npm run db:migrate     # áp các migration -> tạo đủ bảng
 npm run dev
 ```
+
+> DB của bạn đã có bảng từ trước (tạo bằng file `schema.sql` cũ)? Chạy **một lần** `npx prisma migrate resolve --applied 0_init` trong `server/` để Prisma ghi nhận migration đầu tiên đã áp, sau đó dùng `npm run db:migrate` như bình thường.
 
 **3. Chạy client** (mở terminal khác, cổng 5173):
 
