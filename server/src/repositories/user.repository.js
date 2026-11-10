@@ -1,29 +1,54 @@
-import pool from "../db.js";
 class UserRepository {
-  async findbyEmail(email) {
-    const result = await pool.query(
-      `SELECT id, name, email, password_hash, role, status, created_at FROM users WHERE email = $1`,
-      [email],
-    );
-    return result.rows[0] ?? null;
+  constructor(prisma) {
+    this.prisma = prisma;
   }
-  async findById(id) {
-    const result = await pool.query(
-      `SELECT id, name, email, role, status
-            FROM users
-            WHERE id = $1`,
-      [id],
-    );
 
-    return result.rows[0] ?? null;
+  async findbyEmail(email) {
+    return this.prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        password_hash: true,
+        role: true,
+        status: true,
+        created_at: true,
+      },
+    });
   }
+
+  async findById(id) {
+    // id có thể là chuỗi (lấy từ `sub` của access token). Prisma kiểm tra kiểu chặt
+    // (cột INTEGER phải nhận number) nên đổi sang Number trước khi query.
+    return this.prisma.user.findUnique({
+      where: { id: Number(id) },
+      // Không lấy password_hash: kết quả này được gắn vào req.user.
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        status: true,
+      },
+    });
+  }
+
   async create(user) {
     const { name, email, password_hash } = user;
-    const result = await pool.query(
-      `INSERT INTO users (name, email, password_hash, role, status) VALUES ($1, $2, $3, 'staff', 'active') RETURNING id, name, email, password_hash, role, status, created_at`,
-      [name, email, password_hash],
-    );
-    return result.rows[0];
+    return this.prisma.user.create({
+      data: { name, email, password_hash, role: "staff", status: "active" },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        password_hash: true,
+        role: true,
+        status: true,
+        created_at: true,
+      },
+    });
   }
 }
+
 export default UserRepository;

@@ -5,6 +5,12 @@ function errorHandler(error, req, res, next) {
 
   // P2002: Prisma báo vi phạm UNIQUE. meta.modelName cho biết lỗi ở bảng nào.
   if (error.code === "P2002") {
+    if (error.meta?.modelName === "User") {
+      return res.status(409).json({
+        message: "Email đã được sử dụng",
+      });
+    }
+
     if (error.meta?.modelName === "Product") {
       return res.status(409).json({
         message: "SKU đã tồn tại",
