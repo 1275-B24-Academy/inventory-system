@@ -54,7 +54,3 @@ Client không cần tạo `.env`: địa chỉ server khi dev đã có sẵn tro
 ```bash
 psql -d inventory -c "UPDATE users SET role = 'admin' WHERE email = 'email-cua-ban@example.com';"
 ```
-
-## Tài liệu
-
-Chi tiết kiến trúc, các luồng chính và quy ước lint/format: xem [PROJECT_DESCRIPTION.md](PROJECT_DESCRIPTION.md).
