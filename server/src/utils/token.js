@@ -16,8 +16,8 @@ function createAccessToken(userId) {
       algorithm: "HS256",
       expiresIn: "15m",
       issuer: "inventory-server",
-      audience: "inventory-api"
-    }
+      audience: "inventory-api",
+    },
   );
 }
 function verifyAccessToken(token) {
@@ -30,7 +30,7 @@ function verifyAccessToken(token) {
   return jwt.verify(token, secret, {
     algorithms: ["HS256"],
     issuer: "inventory-server",
-    audience: "inventory-api"
+    audience: "inventory-api",
   });
 }
 

@@ -1,61 +1,57 @@
 class goodsReceiptController {
-    constructor(goodsReceiptService) {
-        this.goodsReceiptService = goodsReceiptService;
+  constructor(goodsReceiptService) {
+    this.goodsReceiptService = goodsReceiptService;
+  }
+
+  createDraft = async (req, res, next) => {
+    try {
+      const createdBy = req.user.id;
+      const receipt = await this.goodsReceiptService.createDraft(createdBy);
+
+      return res.status(201).json({
+        message: "Tạo phiếu nhập nháp thành công",
+        receipt,
+      });
+    } catch (error) {
+      next(error);
     }
+  };
+  createWithItems = async (req, res, next) => {
+    try {
+      const createdBy = Number(req.user.id);
+      const items = req.body?.items;
 
-    createDraft = async (req, res, next) => {
-       try {
-        const createdBy = req.user.id;
-        const receipt = await this.goodsReceiptService.createDraft(createdBy);
+      const receipt = await this.goodsReceiptService.createWithItems(
+        createdBy,
+        items,
+      );
 
-        return res.status(201).json({
-            message: "Tạo phiếu nhập nháp thành công",
-            receipt
-        });
-       }
-         catch(error) {
-            next(error);
-        }
-    };
-    createWithItems = async (req, res, next) => {
-        try {
-            const createdBy = Number(req.user.id);
-            const items = req.body?.items;
+      return res.status(201).json({
+        message: "Tạo phiếu nhập nháp thành công.",
+        receipt,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 
-            const receipt =
-            await this.goodsReceiptService.createWithItems(
-                createdBy,
-                items
-            );
+  confirm = async (req, res, next) => {
+    try {
+      const receiptId = Number(req.params.id);
+      const confirmedBy = Number(req.user.id);
 
-            return res.status(201).json({
-            message: "Tạo phiếu nhập nháp thành công.",
-            receipt,
-            });
-        } catch (error) {
-            next(error);
-        }
-    };
+      const receipt = await this.goodsReceiptService.confirm(
+        receiptId,
+        confirmedBy,
+      );
 
-    confirm = async (req, res, next) => {
-        try {
-            const receiptId = Number(req.params.id);
-            const confirmedBy = Number(req.user.id);
-
-            const receipt = await this.goodsReceiptService.confirm(
-            receiptId,
-            confirmedBy
-            );
-
-            return res.status(200).json({
-            message: "Xác nhận phiếu nhập thành công.",
-            receipt,
-            });
-        } catch (error) {
-            next(error);
-        }
-    };
-    
+      return res.status(200).json({
+        message: "Xác nhận phiếu nhập thành công.",
+        receipt,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 module.exports = goodsReceiptController;
-

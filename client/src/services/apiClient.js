@@ -7,9 +7,7 @@ export async function readResponse(response) {
   const data = await response.json();
 
   if (!response.ok) {
-    const error = new Error(
-      data.message || "Không thể thực hiện yêu cầu."
-    );
+    const error = new Error(data.message || "Không thể thực hiện yêu cầu.");
 
     error.status = response.status;
     error.code = data.code;
@@ -21,10 +19,7 @@ export async function readResponse(response) {
 }
 
 // Tạo hàm gửi request có xác thực.
-export function createApiClient({
-  getAccessToken,
-  refreshAccessToken,
-}) {
+export function createApiClient({ getAccessToken, refreshAccessToken }) {
   return async function apiRequest(url, options = {}) {
     async function send(token) {
       const headers = new Headers(options.headers);
@@ -47,8 +42,7 @@ export function createApiClient({
       return await send(originalToken);
     } catch (error) {
       const isExpired =
-        error.status === 401 &&
-        error.code === "ACCESS_TOKEN_EXPIRED";
+        error.status === 401 && error.code === "ACCESS_TOKEN_EXPIRED";
 
       if (!isExpired) {
         throw error;

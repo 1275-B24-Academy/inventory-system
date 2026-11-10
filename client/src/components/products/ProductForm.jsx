@@ -1,7 +1,13 @@
 import { useState } from "react";
 import {
-  Alert, Box, Button, Dialog, DialogActions,
-  DialogContent, DialogTitle, TextField,
+  Alert,
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
 } from "@mui/material";
 
 const fields = [
@@ -14,7 +20,11 @@ const fields = [
 ];
 
 export default function ProductForm({
-  onSubmit, onClose, initialData, isSaving, error,
+  onSubmit,
+  onClose,
+  initialData,
+  isSaving,
+  error,
 }) {
   const [formData, setFormData] = useState({
     name: initialData?.name ?? "",
@@ -78,9 +88,10 @@ export default function ProductForm({
                 required
                 fullWidth
                 slotProps={{
-                  htmlInput: field.type === "number"
-                    ? { min: 0, step: field.name === "stock" ? 1 : "any" }
-                    : {},
+                  htmlInput:
+                    field.type === "number"
+                      ? { min: 0, step: field.name === "stock" ? 1 : "any" }
+                      : {},
                 }}
                 sx={field.name === "name" ? { gridColumn: "1 / -1" } : {}}
               />
@@ -90,7 +101,12 @@ export default function ProductForm({
       </DialogContent>
 
       <DialogActions sx={{ p: 2.5 }}>
-        <Button type="button" onClick={onClose} disabled={isSaving} color="inherit">
+        <Button
+          type="button"
+          onClick={onClose}
+          disabled={isSaving}
+          color="inherit"
+        >
           Hủy
         </Button>
 

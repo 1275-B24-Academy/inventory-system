@@ -10,7 +10,11 @@ import {
   updateProduct,
 } from "../services/productApi";
 import {
-  Alert, Box, Button, Stack, Typography,
+  Alert,
+  Box,
+  Button,
+  Stack,
+  Typography,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -34,7 +38,7 @@ export default function ProductsPage() {
 
   const { user, logout, apiRequest } = useAuth();
 
-  const manageProducts = user?.role === "admin" ;
+  const manageProducts = user?.role === "admin";
 
   const notify = useNotification();
 
@@ -90,37 +94,28 @@ export default function ProductsPage() {
         const updatedProduct = await updateProduct(
           apiRequest,
           editingId,
-          productData
+          productData,
         );
 
         setProducts((previous) =>
           previous.map((product) =>
-            product.id === updatedProduct.id
-              ? updatedProduct
-              : product
-          )
+            product.id === updatedProduct.id ? updatedProduct : product,
+          ),
         );
       } else {
-        const createdProduct = await createProduct(
-          apiRequest,
-          productData
-        );
+        const createdProduct = await createProduct(apiRequest, productData);
 
-        setProducts((previous) => [
-          ...previous,
-          createdProduct,
-        ]);
+        setProducts((previous) => [...previous, createdProduct]);
       }
 
       setShowForm(false);
       setEditingProduct(null);
 
       notify(
-      editingId !== null
-        ? "Cập nhật sản phẩm thành công."
-        : "Thêm sản phẩm thành công."
-);
-
+        editingId !== null
+          ? "Cập nhật sản phẩm thành công."
+          : "Thêm sản phẩm thành công.",
+      );
     } catch (error) {
       setError(error.message);
     } finally {
@@ -169,113 +164,110 @@ export default function ProductsPage() {
     }
   }
   const stats = [
-  {
-    title: "Tổng sản phẩm",
-    value: products.length,
-    icon: <Inventory2Outlined />,
-    color: "#2563EB",
-    background: "#EFF6FF",
-  },
-  {
-    title: "Sắp hết hàng",
-    value: products.filter(
-      (product) => Number(product.stock) > 0 && Number(product.stock) <= 5
-    ).length,
-    icon: <WarningAmberOutlined />,
-    color: "#D97706",
-    background: "#FFFBEB",
-  },
-  {
-    title: "Hết hàng",
-    value: products.filter(
-      (product) => Number(product.stock) === 0
-    ).length,
-    icon: <HighlightOffOutlined />,
-    color: "#DC2626",
-    background: "#FEF2F2",
-  },
-];
+    {
+      title: "Tổng sản phẩm",
+      value: products.length,
+      icon: <Inventory2Outlined />,
+      color: "#2563EB",
+      background: "#EFF6FF",
+    },
+    {
+      title: "Sắp hết hàng",
+      value: products.filter(
+        (product) => Number(product.stock) > 0 && Number(product.stock) <= 5,
+      ).length,
+      icon: <WarningAmberOutlined />,
+      color: "#D97706",
+      background: "#FFFBEB",
+    },
+    {
+      title: "Hết hàng",
+      value: products.filter((product) => Number(product.stock) === 0).length,
+      icon: <HighlightOffOutlined />,
+      color: "#DC2626",
+      background: "#FEF2F2",
+    },
+  ];
 
   return (
-  <MainLayout
-    user={user}
-    onLogout={() => {
-      setError("");
-      setShowLogoutConfirm(true);
-    }}
-    disabled={isSaving || isLoggingOut}
-  >
-    <Stack spacing={3}>
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={2}
-        sx={{
-          justifyContent: "space-between",
-          alignItems: { xs: "flex-start", sm: "center" },
-        }}
-      >
-        <Box>
-          <Typography component="h1"
-            sx={{ fontSize: 30, fontWeight: 700, lineHeight: 1.3 }}
-          >
-            Sản phẩm
-          </Typography>
-          <Typography color="text.secondary" sx={{ mt: 0.5 }}>
-            Quản lý danh sách và thông tin sản phẩm trong kho
-          </Typography>
+    <MainLayout
+      user={user}
+      onLogout={() => {
+        setError("");
+        setShowLogoutConfirm(true);
+      }}
+      disabled={isSaving || isLoggingOut}
+    >
+      <Stack spacing={3}>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={2}
+          sx={{
+            justifyContent: "space-between",
+            alignItems: { xs: "flex-start", sm: "center" },
+          }}
+        >
+          <Box>
+            <Typography
+              component="h1"
+              sx={{ fontSize: 30, fontWeight: 700, lineHeight: 1.3 }}
+            >
+              Sản phẩm
+            </Typography>
+            <Typography color="text.secondary" sx={{ mt: 0.5 }}>
+              Quản lý danh sách và thông tin sản phẩm trong kho
+            </Typography>
+          </Box>
+
+          {manageProducts && (
+            <Button
+              variant="contained"
+              startIcon={<AddOutlined />}
+              disabled={isSaving}
+              onClick={() => {
+                setError("");
+                setEditingProduct(null);
+                setShowForm(true);
+              }}
+            >
+              Thêm sản phẩm
+            </Button>
+          )}
+        </Stack>
+
+        {error && !showForm && <Alert severity="error">{error}</Alert>}
+
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
+            gap: 2,
+          }}
+        >
+          {stats.map((stat) => (
+            <StatCard key={stat.title} stat={stat} />
+          ))}
         </Box>
 
-        {manageProducts && (
-          <Button
-            variant="contained"
-            startIcon={<AddOutlined />}
-            disabled={isSaving}
-            onClick={() => {
-              setError("");
-              setEditingProduct(null);
-              setShowForm(true);
-            }}
-          >
-            Thêm sản phẩm
-          </Button>
-        )}
+        <ProductTable
+          products={products}
+          onEdit={handleEditProduct}
+          manageProducts={manageProducts}
+          disabled={isSaving}
+        />
       </Stack>
 
-      {error && !showForm && (
-        <Alert severity="error">{error}</Alert>
+      {manageProducts && showForm && (
+        <ProductForm
+          key={editingProduct?.id ?? "new"}
+          initialData={editingProduct}
+          onSubmit={handleSaveProduct}
+          onClose={handleCloseForm}
+          isSaving={isSaving}
+          error={error}
+        />
       )}
-
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
-          gap: 2,
-        }}
-      >
-        {stats.map((stat) => (
-          <StatCard key={stat.title} stat={stat} />
-        ))}
-      </Box>
-
-      <ProductTable
-        products={products}
-        onEdit={handleEditProduct}
-        manageProducts={manageProducts}
-        disabled={isSaving}
-      />
-    </Stack>
-
-    {manageProducts && showForm && (
-      <ProductForm
-        key={editingProduct?.id ?? "new"}
-        initialData={editingProduct}
-        onSubmit={handleSaveProduct}
-        onClose={handleCloseForm}
-        isSaving={isSaving}
-        error={error}
-      />
-    )}
-    <Dialog
+      <Dialog
         open={showLogoutConfirm}
         onClose={handleCloseLogoutConfirm}
         fullWidth
@@ -283,9 +275,7 @@ export default function ProductsPage() {
         aria-labelledby="logout-title"
         aria-describedby="logout-description"
       >
-        <DialogTitle id="logout-title">
-          Xác nhận đăng xuất
-        </DialogTitle>
+        <DialogTitle id="logout-title">Xác nhận đăng xuất</DialogTitle>
 
         <DialogContent>
           <DialogContentText id="logout-description">
@@ -317,7 +307,6 @@ export default function ProductsPage() {
           </Button>
         </DialogActions>
       </Dialog>
-          
-  </MainLayout>
-);
+    </MainLayout>
+  );
 }

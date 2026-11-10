@@ -4,10 +4,7 @@ export default function StatCard({ stat }) {
   return (
     <Paper
       variant="outlined"
-      sx={{ p: 2.5,
-            borderRadius: "8px",
-            borderColor: "#E2E8F0",
-          }}
+      sx={{ p: 2.5, borderRadius: "8px", borderColor: "#E2E8F0" }}
     >
       <Stack direction="row" spacing={2} alignItems="center">
         <Stack

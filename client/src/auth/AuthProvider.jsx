@@ -1,16 +1,7 @@
-import {
-  useState,
-  useRef,
-  useCallback,
-  useMemo,
-} from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 
 import { AuthContext } from "./AuthContext";
-import {
-  loginApi,
-  logoutApi,
-  refreshApi,
-} from "../services/authApi";
+import { loginApi, logoutApi, refreshApi } from "../services/authApi";
 import { createApiClient } from "../services/apiClient";
 
 function readSavedUser() {
@@ -29,8 +20,8 @@ function readSavedUser() {
 
 export default function AuthProvider({ children }) {
   const [user, setUser] = useState(readSavedUser);
-  const [accessToken, setAccessToken] = useState(
-    () => localStorage.getItem("accessToken")
+  const [accessToken, setAccessToken] = useState(() =>
+    localStorage.getItem("accessToken"),
   );
 
   // Giúp request luôn đọc được token mới nhất.
@@ -72,7 +63,7 @@ export default function AuthProvider({ children }) {
 
       return data;
     },
-    [saveAccessToken]
+    [saveAccessToken],
   );
 
   const logout = useCallback(async () => {
@@ -124,13 +115,13 @@ export default function AuthProvider({ children }) {
 
   const apiRequest = useMemo(
     () =>
-       // Getter chỉ được gọi khi apiRequest thực hiện request, không phải khi render.
-       // eslint-disable-next-line react-hooks/refs
+      // Getter chỉ được gọi khi apiRequest thực hiện request, không phải khi render.
+      // eslint-disable-next-line react-hooks/refs
       createApiClient({
         getAccessToken: () => accessTokenRef.current,
         refreshAccessToken,
       }),
-    [refreshAccessToken]
+    [refreshAccessToken],
   );
 
   const value = {
@@ -141,9 +132,5 @@ export default function AuthProvider({ children }) {
     apiRequest,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
