@@ -1,6 +1,28 @@
 const pool = require("../db");
 
 class GoodsIssueRepository {
+  async findAll() {
+    const result = await pool.query(
+      `SELECT
+       gi.id,
+       gi.status,
+       gi.created_by,
+       creator.name AS created_by_name,
+       gi.created_at,
+       gi.confirmed_by,
+       confirmer.name AS confirmed_by_name,
+       gi.confirmed_at
+     FROM goods_issues AS gi
+     JOIN users AS creator
+       ON creator.id = gi.created_by
+     LEFT JOIN users AS confirmer
+       ON confirmer.id = gi.confirmed_by
+     ORDER BY gi.created_at DESC, gi.id DESC`,
+    );
+
+    return result.rows;
+  }
+
   // Tạo phiếu xuất nháp kèm danh sách sản phẩm.
   async createWithItems(createdBy, items) {
     const client = await pool.connect();

@@ -7,16 +7,40 @@ class ProductService {
     return this.productRepository.findAll();
   }
   async createProduct(product) {
-    const { name, sku, category, supplier, price, stock } = product;
+    if (
+      product === null ||
+      typeof product !== "object" ||
+      Array.isArray(product)
+    ) {
+      const error = new Error("Dữ liệu sản phẩm không hợp lệ");
+      error.statusCode = 400;
+      throw error;
+    }
 
-    if (!name || !sku || !category || !supplier) {
-      const error = new Error("Vui lòng nhập đầy đủ thông tin");
+    const { name, sku, category, supplier, price } = product;
+
+    const textFields = [name, sku, category, supplier];
+
+    if (
+      textFields.some(
+        (value) => typeof value !== "string" || value.trim() === "",
+      )
+    ) {
+      const error = new Error("Vui lòng nhập đầy đủ thông tin hợp lệ");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (
+      (typeof price !== "number" && typeof price !== "string") ||
+      String(price).trim() === ""
+    ) {
+      const error = new Error("Giá phải là số không âm");
       error.statusCode = 400;
       throw error;
     }
 
     const productPrice = Number(price);
-    const productStock = Number(stock);
 
     if (!Number.isFinite(productPrice) || productPrice < 0) {
       const error = new Error("Giá phải là số không âm");
@@ -24,19 +48,12 @@ class ProductService {
       throw error;
     }
 
-    if (!Number.isInteger(productStock) || productStock < 0) {
-      const error = new Error("Số lượng phải là số nguyên không âm");
-      error.statusCode = 400;
-      throw error;
-    }
-
     return this.productRepository.create({
-      name,
-      sku,
-      category,
-      supplier,
+      name: name.trim(),
+      sku: sku.trim(),
+      category: category.trim(),
+      supplier: supplier.trim(),
       price: productPrice,
-      stock: productStock,
     });
   }
   async updateProduct(id, product) {
@@ -46,7 +63,7 @@ class ProductService {
       error.statusCode = 400;
       throw error;
     }
-    const { name, sku, category, supplier, price, stock } = product;
+    const { name, sku, category, supplier, price } = product;
     if (!name || !sku || !category || !supplier) {
       const error = new Error("Vui lòng nhập đầy đủ thông tin");
       error.statusCode = 400;
@@ -54,7 +71,6 @@ class ProductService {
     }
 
     const productPrice = Number(price);
-    const productStock = Number(stock);
 
     if (
       price === null ||
@@ -67,26 +83,12 @@ class ProductService {
       error.statusCode = 400;
       throw error;
     }
-
-    if (
-      stock === null ||
-      stock === undefined ||
-      String(stock).trim() === "" ||
-      !Number.isInteger(productStock) ||
-      productStock < 0
-    ) {
-      const error = new Error("Số lượng phải là số nguyên không âm");
-      error.statusCode = 400;
-      throw error;
-    }
-
     const updatedProduct = await this.productRepository.update(productId, {
       name,
       sku,
       category,
       supplier,
       price: productPrice,
-      stock: productStock,
     });
     if (!updatedProduct) {
       const error = new Error("Sản phẩm không tồn tại");

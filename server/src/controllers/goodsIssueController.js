@@ -3,6 +3,18 @@ class GoodsIssueController {
     this.goodsIssueService = goodsIssueService;
   }
 
+  getIssues = async (req, res, next) => {
+    try {
+      const issues = await this.goodsIssueService.getIssues();
+      res.status(200).json({
+        message: "Lấy danh sách phiếu xuất thành công.",
+        issues,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   createWithItems = async (req, res, next) => {
     try {
       const createdBy = req.user.id;

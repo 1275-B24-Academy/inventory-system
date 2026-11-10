@@ -13,5 +13,6 @@ router.use(
 
 router.post("/", goodsReceiptController.createWithItems);
 router.post("/:id/confirm", goodsReceiptController.confirm);
+router.get("/", goodsReceiptController.getReceipts);
 
 module.exports = router;

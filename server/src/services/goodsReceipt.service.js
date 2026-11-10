@@ -3,6 +3,10 @@ class GoodsReceiptService {
     this.goodsReceiptRepository = goodsReceiptRepository;
   }
 
+  async getReceipts() {
+    return this.goodsReceiptRepository.findAll();
+  }
+
   async createDraft(createdBy) {
     if (!Number.isInteger(createdBy) || createdBy <= 0) {
       const error = new Error("ID người tạo không hợp lệ.");

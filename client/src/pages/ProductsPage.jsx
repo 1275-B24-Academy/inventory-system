@@ -82,9 +82,11 @@ export default function ProductsPage() {
     setError("");
 
     const productData = {
-      ...formData,
+      name: formData.name,
+      sku: formData.sku,
+      category: formData.category,
+      supplier: formData.supplier,
       price: Number(formData.price),
-      stock: Number(formData.stock),
     };
 
     const editingId = editingProduct?.id ?? null;

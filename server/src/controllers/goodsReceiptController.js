@@ -3,6 +3,19 @@ class goodsReceiptController {
     this.goodsReceiptService = goodsReceiptService;
   }
 
+  getReceipts = async (req, res, next) => {
+    try {
+      const receipts = await this.goodsReceiptService.getReceipts();
+
+      return res.status(200).json({
+        message: "Lấy danh sách phiếu nhập thành công.",
+        receipts,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   createDraft = async (req, res, next) => {
     try {
       const createdBy = req.user.id;

@@ -15,6 +15,7 @@ router.use(
   requireRoles(["admin"]),
 );
 
+router.get("/", goodsIssueController.getIssues);
 // Tạo phiếu xuất kho.
 router.post("/", goodsIssueController.createWithItems);
 

@@ -1,6 +1,27 @@
 const pool = require("../db");
 
 class GoodsReceiptRepository {
+  async findAll() {
+    const result = await pool.query(
+      `SELECT
+       gr.id,
+       gr.status,
+       gr.created_by,
+       creator.name AS created_by_name,
+       gr.created_at,
+       gr.confirmed_by,
+       confirmer.name AS confirmed_by_name,
+       gr.confirmed_at
+     FROM goods_receipts AS gr
+     JOIN users AS creator
+       ON creator.id = gr.created_by
+     LEFT JOIN users AS confirmer
+       ON confirmer.id = gr.confirmed_by
+     ORDER BY gr.created_at DESC, gr.id DESC`,
+    );
+
+    return result.rows;
+  }
   async createDraft(createdBy) {
     const result = await pool.query(
       `INSERT INTO goods_receipts (created_by)
