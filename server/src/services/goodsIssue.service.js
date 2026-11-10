@@ -3,6 +3,10 @@ class GoodsIssueService {
     this.goodsIssueRepository = goodsIssueRepository;
   }
 
+  async getIssues() {
+    return this.goodsIssueRepository.findAll();
+  }
+
   async createWithItems(createdBy, items) {
     function badRequest(message) {
       const error = new Error(message);
