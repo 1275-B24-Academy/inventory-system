@@ -6,6 +6,7 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "lint": "eslint .",
+    "check": "node -e \"require('./src/app'); process.exit(0)\"",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

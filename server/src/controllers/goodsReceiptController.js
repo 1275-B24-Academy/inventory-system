@@ -29,6 +29,7 @@ class goodsReceiptController {
       next(error);
     }
   };
+
   createWithItems = async (req, res, next) => {
     try {
       const createdBy = Number(req.user.id);
@@ -67,4 +68,5 @@ class goodsReceiptController {
     }
   };
 }
+
 module.exports = goodsReceiptController;
