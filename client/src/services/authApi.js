@@ -1,6 +1,6 @@
 import { readResponse } from "./apiClient";
 
-const API_URL = "http://localhost:3000/api/auth";
+const API_URL = `${import.meta.env.VITE_API_URL ?? ""}/api/auth`;
 
 export async function registerApi(userData) {
   const response = await fetch(`${API_URL}/register`, {
