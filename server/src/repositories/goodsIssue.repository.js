@@ -1,8 +1,4 @@
-function createError(message, statusCode) {
-  const error = new Error(message);
-  error.statusCode = statusCode;
-  return error;
-}
+import { createError } from "../utils/httpError.js";
 
 class GoodsIssueRepository {
   constructor(prisma) {
