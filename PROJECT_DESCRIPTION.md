@@ -388,7 +388,6 @@ POST /api/goods-receipts/:id/confirm
 - Argon2.
 - JSON Web Token.
 - Cookie Parser.
-- Express Session.
 - CORS.
 - Dotenv.
 
