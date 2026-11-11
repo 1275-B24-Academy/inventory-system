@@ -1,105 +1,71 @@
-import pool from "../db.js";
+import { createError } from "../utils/httpError.js";
 
 class GoodsReceiptRepository {
-  async createDraft(createdBy) {
-    const result = await pool.query(
-      `INSERT INTO goods_receipts (created_by)
-       VALUES ($1)
-       RETURNING *`,
-      [createdBy],
-    );
-
-    return result.rows[0];
+  constructor(prisma) {
+    this.prisma = prisma;
   }
+
+  async createDraft(createdBy) {
+    return this.prisma.goodsReceipt.create({
+      data: { created_by: createdBy },
+    });
+  }
+
   async createWithItems(createdBy, items) {
-    const client = await pool.connect();
-
-    try {
-      await client.query("BEGIN");
-
-      // Tạo phiếu nháp.
-      const receiptResult = await client.query(
-        `INSERT INTO goods_receipts (created_by)
-         VALUES ($1)
-         RETURNING *`,
-        [createdBy],
-      );
-
-      const receipt = receiptResult.rows[0];
-      const savedItems = [];
-
-      // Thêm các dòng sản phẩm vào phiếu vừa tạo.
-      for (const item of items) {
-        const itemResult = await client.query(
-          `INSERT INTO goods_receipt_items (
-             receipt_id,
-             product_id,
-             quantity
-           )
-           VALUES ($1, $2, $3)
-           RETURNING *`,
-          [receipt.id, item.productId, item.quantity],
-        );
-
-        savedItems.push(itemResult.rows[0]);
-      }
-
-      await client.query("COMMIT");
-
-      return {
-        ...receipt,
-        items: savedItems,
-      };
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
+    // Một lệnh create kèm nested create cho các dòng: Prisma tự chạy trong 1 transaction,
+    // lỗi ở dòng nào thì cả phiếu cũng không được tạo.
+    return this.prisma.goodsReceipt.create({
+      data: {
+        created_by: createdBy,
+        items: {
+          create: items.map((item) => ({
+            product_id: item.productId,
+            quantity: item.quantity,
+          })),
+        },
+      },
+      include: {
+        items: { orderBy: { id: "asc" } },
+      },
+    });
   }
 
   async confirm(receiptId, confirmedBy) {
-    const client = await pool.connect();
+    // Mọi bước chạy trong 1 transaction: lỗi ở bước nào thì rollback toàn bộ.
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Đổi trạng thái draft -> confirmed. Điều kiện status = 'draft' nằm TRONG câu
+      //    update: UPDATE khóa dòng tới hết transaction, nên 2 request xác nhận cùng lúc
+      //    thì request sau phải chờ, rồi không còn khớp điều kiện -> count = 0.
+      const locked = await tx.goodsReceipt.updateMany({
+        where: { id: receiptId, status: "draft" },
+        data: {
+          status: "confirmed",
+          confirmed_by: confirmedBy,
+          confirmed_at: new Date(),
+        },
+      });
 
-    function createError(message, statusCode) {
-      const error = new Error(message);
-      error.statusCode = statusCode;
-      return error;
-    }
+      if (locked.count === 0) {
+        // Không update được: hoặc không có phiếu, hoặc phiếu đã xác nhận.
+        const receipt = await tx.goodsReceipt.findUnique({
+          where: { id: receiptId },
+          select: { id: true },
+        });
 
-    try {
-      await client.query("BEGIN");
+        if (!receipt) {
+          throw createError("Phiếu nhập không tồn tại.", 404);
+        }
 
-      // 1. Khóa phiếu để tránh hai request xác nhận cùng lúc.
-      const receiptResult = await client.query(
-        `SELECT id, status
-        FROM goods_receipts
-        WHERE id = $1
-        FOR UPDATE`,
-        [receiptId],
-      );
-
-      const receipt = receiptResult.rows[0];
-
-      if (!receipt) {
-        throw createError("Phiếu nhập không tồn tại.", 404);
-      }
-
-      if (receipt.status !== "draft") {
         throw createError("Phiếu nhập đã được xác nhận.", 409);
       }
 
-      // 2. Lấy và khóa các dòng chi tiết.
-      const itemsResult = await client.query(
-        `SELECT id, product_id, quantity
-        FROM goods_receipt_items
-        WHERE receipt_id = $1
-        ORDER BY product_id
-        FOR UPDATE`,
-        [receiptId],
-      );
-
-      const items = itemsResult.rows;
+      // 2. Lấy các dòng chi tiết, sắp theo product_id để mọi transaction khóa sản phẩm
+      //    theo cùng một thứ tự -> tránh deadlock.
+      const items = await tx.goodsReceiptItem.findMany({
+        where: { receipt_id: receiptId },
+        orderBy: { product_id: "asc" },
+        select: { id: true, product_id: true, quantity: true },
+      });
 
       if (items.length === 0) {
         throw createError("Phiếu nhập chưa có sản phẩm.", 400);
@@ -107,48 +73,22 @@ class GoodsReceiptRepository {
 
       // 3. Cộng tồn và ghi lịch sử cho từng sản phẩm.
       for (const item of items) {
-        const productResult = await client.query(
-          `UPDATE products
-            SET stock = stock + $1
-            WHERE id = $2
-            RETURNING id`,
-          [item.quantity, item.product_id],
-        );
+        const product = await tx.product.updateMany({
+          where: { id: item.product_id },
+          data: { stock: { increment: item.quantity } },
+        });
 
-        if (productResult.rows.length === 0) {
+        if (product.count === 0) {
           throw createError("Sản phẩm trong phiếu không tồn tại.", 404);
         }
 
-        await client.query(
-          `INSERT INTO stock_movements (
-            receipt_item_id,
-            quantity
-            )
-            VALUES ($1, $2)`,
-          [item.id, item.quantity],
-        );
+        await tx.stockMovement.create({
+          data: { receipt_item_id: item.id, quantity: item.quantity },
+        });
       }
 
-      // 4. Đổi trạng thái và lưu người xác nhận.
-      const confirmedResult = await client.query(
-        `UPDATE goods_receipts
-        SET status = 'confirmed',
-            confirmed_by = $1,
-            confirmed_at = CURRENT_TIMESTAMP
-        WHERE id = $2
-        RETURNING *`,
-        [confirmedBy, receiptId],
-      );
-
-      await client.query("COMMIT");
-
-      return confirmedResult.rows[0];
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
+      return tx.goodsReceipt.findUnique({ where: { id: receiptId } });
+    });
   }
 }
 

@@ -1,4 +1,4 @@
-import pool from "./db.js";
+import prisma from "./prisma.js";
 
 import ProductRepository from "./repositories/product.repository.js";
 import ProductService from "./services/product.service.js";
@@ -18,11 +18,11 @@ import GoodsIssueController from "./controllers/goodsIssueController.js";
 
 import RefreshTokenRepository from "./repositories/refreshToken.repository.js";
 
-// 1. Tạo repository.
-const userRepository = new UserRepository();
-const refreshTokenRepository = new RefreshTokenRepository(pool);
-const goodsReceiptRepository = new GoodsReceiptRepository();
-const goodsIssueRepository = new GoodsIssueRepository();
+// 1. Tạo repository, truyền PrismaClient dùng chung vào (dependency injection).
+const userRepository = new UserRepository(prisma);
+const refreshTokenRepository = new RefreshTokenRepository(prisma);
+const goodsReceiptRepository = new GoodsReceiptRepository(prisma);
+const goodsIssueRepository = new GoodsIssueRepository(prisma);
 
 // 2. Đưa repository vào service.
 const authService = new AuthService(userRepository, refreshTokenRepository);
@@ -34,7 +34,7 @@ const authController = new AuthController(authService);
 const goodsReceiptController = new GoodsReceiptController(goodsReceiptService);
 const goodsIssueController = new GoodsIssueController(goodsIssueService);
 
-const productRepository = new ProductRepository();
+const productRepository = new ProductRepository(prisma);
 const productService = new ProductService(productRepository);
 const productController = new ProductController(productService);
 

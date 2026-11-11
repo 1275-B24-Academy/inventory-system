@@ -1,165 +1,104 @@
-import pool from "../db.js";
+import { createError } from "../utils/httpError.js";
 
 class GoodsIssueRepository {
+  constructor(prisma) {
+    this.prisma = prisma;
+  }
+
   // Tạo phiếu xuất nháp kèm danh sách sản phẩm.
   async createWithItems(createdBy, items) {
-    const client = await pool.connect();
-
-    try {
-      await client.query("BEGIN");
-
-      // 1. Tạo phiếu xuất nháp.
-      const issueResult = await client.query(
-        `INSERT INTO goods_issues (created_by)
-                 VALUES ($1)
-                 RETURNING *`,
-        [createdBy],
-      );
-
-      const issue = issueResult.rows[0];
-      const savedItems = [];
-
-      // 2. Thêm các sản phẩm vào phiếu xuất.
-      for (const item of items) {
-        const itemResult = await client.query(
-          `INSERT INTO goods_issue_items (
-                        issue_id,
-                        product_id,
-                        quantity
-                    )
-                    VALUES ($1, $2, $3)
-                    RETURNING *`,
-          [issue.id, item.productId, item.quantity],
-        );
-
-        savedItems.push(itemResult.rows[0]);
-      }
-
-      await client.query("COMMIT");
-
-      return {
-        ...issue,
-        items: savedItems,
-      };
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
+    // Một lệnh create kèm nested create cho các dòng: Prisma tự chạy trong 1 transaction.
+    return this.prisma.goodsIssue.create({
+      data: {
+        created_by: createdBy,
+        items: {
+          create: items.map((item) => ({
+            product_id: item.productId,
+            quantity: item.quantity,
+          })),
+        },
+      },
+      include: {
+        items: { orderBy: { id: "asc" } },
+      },
+    });
   }
 
   // Xác nhận phiếu xuất và trừ tồn kho.
   async confirm(issueId, confirmedBy) {
-    const client = await pool.connect();
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Đổi trạng thái draft -> confirmed, điều kiện nằm trong câu update để khóa phiếu
+      //    (giải thích chi tiết ở GoodsReceiptRepository.confirm).
+      const locked = await tx.goodsIssue.updateMany({
+        where: { id: issueId, status: "draft" },
+        data: {
+          status: "confirmed",
+          confirmed_by: confirmedBy,
+          confirmed_at: new Date(),
+        },
+      });
 
-    function createError(message, statusCode) {
-      const error = new Error(message);
-      error.statusCode = statusCode;
-      return error;
-    }
+      if (locked.count === 0) {
+        const issue = await tx.goodsIssue.findUnique({
+          where: { id: issueId },
+          select: { id: true },
+        });
 
-    try {
-      await client.query("BEGIN");
+        if (!issue) {
+          throw createError("Phiếu xuất không tồn tại.", 404);
+        }
 
-      // 1. Tìm và khóa phiếu xuất.
-      const issueResult = await client.query(
-        `SELECT id, status
-                 FROM goods_issues
-                 WHERE id = $1
-                 FOR UPDATE`,
-        [issueId],
-      );
-
-      const issue = issueResult.rows[0];
-
-      if (!issue) {
-        throw createError("Phiếu xuất không tồn tại.", 404);
-      }
-
-      // 2. Chỉ cho phép xác nhận phiếu nháp.
-      if (issue.status !== "draft") {
         throw createError("Phiếu xuất đã được xác nhận.", 409);
       }
 
-      // 3. Lấy danh sách sản phẩm trong phiếu.
-      const itemResult = await client.query(
-        `SELECT id, product_id, quantity
-                 FROM goods_issue_items
-                 WHERE issue_id = $1
-                 ORDER BY product_id
-                 FOR UPDATE`,
-        [issueId],
-      );
-
-      const items = itemResult.rows;
+      // 2. Lấy danh sách sản phẩm, sắp theo product_id để tránh deadlock.
+      const items = await tx.goodsIssueItem.findMany({
+        where: { issue_id: issueId },
+        orderBy: { product_id: "asc" },
+        select: { id: true, product_id: true, quantity: true },
+      });
 
       if (items.length === 0) {
         throw createError("Phiếu xuất không có sản phẩm.", 400);
       }
 
-      // 4. Kiểm tra tồn kho và trừ kho.
+      // 3. Trừ kho. Điều kiện "đủ tồn" (stock >= quantity) nằm TRONG câu update:
+      //    2 phiếu xuất cùng sản phẩm xác nhận cùng lúc thì phiếu sau phải chờ,
+      //    rồi kiểm tra lại với tồn kho mới. Đừng đọc stock ra rồi so sánh trong JS.
       for (const item of items) {
-        const stockResult = await client.query(
-          `SELECT id, stock
-                     FROM products
-                     WHERE id = $1
-                     FOR UPDATE`,
-          [item.product_id],
-        );
+        const product = await tx.product.updateMany({
+          where: { id: item.product_id, stock: { gte: item.quantity } },
+          data: { stock: { decrement: item.quantity } },
+        });
 
-        const product = stockResult.rows[0];
+        if (product.count === 0) {
+          // Không trừ được: hoặc không có sản phẩm, hoặc không đủ tồn kho.
+          const existing = await tx.product.findUnique({
+            where: { id: item.product_id },
+            select: { id: true },
+          });
 
-        if (!product) {
-          throw createError(`Sản phẩm ${item.product_id} không tồn tại.`, 404);
-        }
-        if (product.stock < item.quantity) {
+          if (!existing) {
+            throw createError(
+              `Sản phẩm ${item.product_id} không tồn tại.`,
+              404,
+            );
+          }
+
           throw createError(
             `Sản phẩm ${item.product_id} không đủ tồn kho.`,
             409,
           );
         }
 
-        // Trừ số lượng tồn kho.
-        await client.query(
-          `UPDATE products
-                     SET stock = stock - $1
-                     WHERE id = $2`,
-          [item.quantity, item.product_id],
-        );
-
-        // 5. Ghi lịch sử xuất kho.
-        await client.query(
-          `INSERT INTO stock_movements (
-                        issue_item_id,
-                        quantity
-                    )
-                    VALUES ($1, $2)`,
-          [item.id, item.quantity],
-        );
+        // 4. Ghi lịch sử xuất kho.
+        await tx.stockMovement.create({
+          data: { issue_item_id: item.id, quantity: item.quantity },
+        });
       }
 
-      // 6. Cập nhật trạng thái phiếu xuất.
-      const confirmedResult = await client.query(
-        `UPDATE goods_issues
-                 SET status = 'confirmed',
-                     confirmed_by = $1,
-                     confirmed_at = CURRENT_TIMESTAMP
-                 WHERE id = $2
-                 RETURNING *`,
-        [confirmedBy, issueId],
-      );
-
-      // 7. Lưu toàn bộ transaction.
-      await client.query("COMMIT");
-
-      return confirmedResult.rows[0];
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
+      return tx.goodsIssue.findUnique({ where: { id: issueId } });
+    });
   }
 }
 

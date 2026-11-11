@@ -1,12 +1,8 @@
 import argon2 from "argon2";
 import { randomUUID } from "node:crypto";
 import { createRefreshToken, hashRefreshToken } from "../utils/refreshToken.js";
+import { createError } from "../utils/httpError.js";
 
-function createError(message, statusCode) {
-  const error = new Error(message);
-  error.statusCode = statusCode;
-  return error;
-}
 class AuthService {
   constructor(userRepository, refreshTokenRepository) {
     this.userRepository = userRepository;
