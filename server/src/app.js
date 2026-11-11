@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import express from "express";
 import cors from "cors";
 
+import notFound from "./middlewares/notFound.js";
 import authRoutes from "./routes/auth.routes.js";
 import productRoutes from "./routes/product.routes.js";
 import errorHandler from "./middlewares/errorHandler.js";
@@ -44,6 +45,7 @@ if (fs.existsSync(clientDist)) {
   });
 }
 
+app.use(notFound);
 app.use(errorHandler);
 
 export default app;
