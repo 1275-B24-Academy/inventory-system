@@ -113,9 +113,6 @@ class GoodsIssueRepository {
         if (!product) {
           throw createError(`Sản phẩm ${item.product_id} không tồn tại.`, 404);
         }
-        console.log("PRODUCT:", product);
-        console.log("STOCK:", product.stock);
-        console.log("QUANTITY:", item.quantity);
         if (product.stock < item.quantity) {
           throw createError(
             `Sản phẩm ${item.product_id} không đủ tồn kho.`,
