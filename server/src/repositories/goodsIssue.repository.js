@@ -85,6 +85,7 @@ class GoodsIssueRepository {
             );
           }
 
+        if (existing.stock < item.quantity) {
           throw createError(
             `Sản phẩm ${item.product_id} không đủ tồn kho.`,
             409,
