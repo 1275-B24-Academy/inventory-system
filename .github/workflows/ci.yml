@@ -44,6 +44,43 @@ jobs:
           npm start &
           curl --fail --retry 10 --retry-connrefused --retry-delay 1 http://localhost:3000/health
 
+  test-server:
+    name: Test (server)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: server
+    # Postgres thật cho integration test (chạy như container song song với job).
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: inventory_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d inventory_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/inventory_test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - run: npm ci
+      # Unit và integration test chạy chung một lệnh; migration được áp tự động ở globalSetup.
+      - run: npm test
+
   build-client:
     name: Build (client)
     runs-on: ubuntu-latest
