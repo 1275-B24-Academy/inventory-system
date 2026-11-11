@@ -57,6 +57,33 @@ Client không cần tạo `.env`: địa chỉ server khi dev đã có sẵn tro
 psql -d inventory -c "UPDATE users SET role = 'admin' WHERE email = 'email-cua-ban@example.com';"
 ```
 
+## Test (server)
+
+Dùng [Vitest](https://vitest.dev/) + [Supertest](https://github.com/forwardemail/supertest). Code test nằm trong `server/tests/`:
+
+| Loại                 | Thư mục              | Đặc điểm                                                                                  |
+| -------------------- | -------------------- | ----------------------------------------------------------------------------------------- |
+| **Unit test**        | `tests/unit/`        | Test từng service/util, repository được mock. Không cần DB, chạy rất nhanh.               |
+| **Integration test** | `tests/integration/` | Gọi API qua HTTP (Supertest), đi qua toàn bộ route -> service -> Prisma -> Postgres thật. |
+
+**Database test:** test dùng một database riêng, `inventory_test` (không dùng chung với DB dev, vì test sẽ xóa sạch dữ liệu). Bạn không cần tạo tay: lần chạy đầu tiên test tự tạo DB nếu chưa có (user cần quyền `CREATEDB`, user mặc định của Postgres local đã có).
+
+Mặc định test kết nối `postgresql://postgres:postgres@localhost:5432/inventory_test`. Postgres trên máy bạn dùng user/password khác thì thêm `TEST_DATABASE_URL=...` vào `server/.env` (xem `.env.example`). Tên DB phải kết thúc bằng `_test`, nếu không test từ chối chạy.
+
+Các lệnh chạy trong thư mục `server/`:
+
+```bash
+npm test                  # chạy cả unit lẫn integration (tự áp migration lên DB test)
+npm run test:unit         # chỉ unit test, không cần DB
+npm run test:integration  # chỉ integration test
+npm run test:watch        # unit test ở chế độ watch, tự chạy lại khi sửa code
+npm run test:coverage     # kèm báo cáo coverage (thư mục coverage/)
+```
+
+Viết test mới: sao chép test mẫu cùng loại (`tests/unit/product.service.test.js`, `tests/integration/product.test.js`). Integration test có sẵn helper trong `tests/integration/helpers.js`: `resetDb()` (gọi trong `beforeEach`), `createUser()`, `loginAs()`, `createProduct()`.
+
+CI chạy `npm test` trên mỗi PR, với Postgres chạy bằng GitHub Actions service.
+
 ## Thay đổi database (migration)
 
 Không sửa bảng trực tiếp trên database. Mọi thay đổi đi qua **migration**: file SQL có version, commit cùng code, ai pull về cũng áp được đúng thứ tự.
