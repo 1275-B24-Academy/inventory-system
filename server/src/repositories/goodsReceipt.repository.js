@@ -11,7 +11,7 @@ class GoodsReceiptRepository {
 
     return result.rows[0];
   }
-  async createWithItems(createdBy, items) {
+  async createWithItems(createdBy, items, receiptType = "NORMAL") {
     const client = await pool.connect();
 
     try {
@@ -19,10 +19,10 @@ class GoodsReceiptRepository {
 
       // Tạo phiếu nháp.
       const receiptResult = await client.query(
-        `INSERT INTO goods_receipts (created_by)
-         VALUES ($1)
+        `INSERT INTO goods_receipts (created_by, receipt_type)
+         VALUES ($1, $2)
          RETURNING *`,
-        [createdBy],
+        [createdBy, receiptType],
       );
 
       const receipt = receiptResult.rows[0];
