@@ -20,12 +20,19 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  TextField,
+  MenuItem,
+  Paper,
+  Chip,
+  InputAdornment,
 } from "@mui/material";
 import {
   AddOutlined,
   Inventory2Outlined,
   WarningAmberOutlined,
   HighlightOffOutlined,
+  SearchRounded,
+  FilterAltOutlined,
 } from "@mui/icons-material";
 
 import MainLayout from "../components/MainLayout";
@@ -33,6 +40,9 @@ import StatCard from "../components/products/StatCard";
 
 export default function ProductsPage() {
   //thông báo
+
+  const LOW_STOCK_THRESHOLD = 5;
+
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -43,10 +53,43 @@ export default function ProductsPage() {
   const notify = useNotification();
 
   const [products, setProducts] = useState([]);
+
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("");
+  const [stockFilter, setStockFilter] = useState("");
+
+  const query = search.trim().toLowerCase();
+
+  const hasActiveFilters =
+    query !== "" || category !== "" || stockFilter !== "";
+
+  const filteredProducts = products.filter((product) => {
+    const matchesName = product.name.toLowerCase().includes(query);
+    const matchesSku = product.sku.toLowerCase().includes(query);
+
+    const matchesSearch = matchesName || matchesSku;
+    const matchesCategory = category === "" || product.category === category;
+
+    const stock = Number(product.stock);
+
+    const matchesStock =
+      stockFilter === "out"
+        ? stock === 0
+        : stockFilter === "low"
+          ? stock > 0 && stock <= LOW_STOCK_THRESHOLD
+          : true;
+
+    return matchesSearch && matchesCategory && matchesStock;
+  });
+
+  const categories = [
+    ...new Set(products.map((product) => product.category)),
+  ].sort();
 
   useEffect(() => {
     let cancelled = false;
@@ -173,8 +216,11 @@ export default function ProductsPage() {
     },
     {
       title: "Sắp hết hàng",
+      filter: "low",
       value: products.filter(
-        (product) => Number(product.stock) > 0 && Number(product.stock) <= 5,
+        (product) =>
+          Number(product.stock) > 0 &&
+          Number(product.stock) <= LOW_STOCK_THRESHOLD,
       ).length,
       icon: <WarningAmberOutlined />,
       color: "#D97706",
@@ -182,6 +228,7 @@ export default function ProductsPage() {
     },
     {
       title: "Hết hàng",
+      filter: "out",
       value: products.filter((product) => Number(product.stock) === 0).length,
       icon: <HighlightOffOutlined />,
       color: "#DC2626",
@@ -189,6 +236,14 @@ export default function ProductsPage() {
     },
   ];
 
+  function handleToggleStockFilter(value) {
+    setStockFilter((previous) => (previous === value ? "" : value));
+  }
+  function handleClearFilters() {
+    setSearch("");
+    setCategory("");
+    setStockFilter("");
+  }
   return (
     <MainLayout
       user={user}
@@ -245,12 +300,216 @@ export default function ProductsPage() {
           }}
         >
           {stats.map((stat) => (
-            <StatCard key={stat.title} stat={stat} />
+            <StatCard
+              key={stat.title}
+              stat={stat}
+              onClick={
+                stat.filter
+                  ? () => handleToggleStockFilter(stat.filter)
+                  : undefined
+              }
+              selected={Boolean(stat.filter) && stockFilter === stat.filter}
+            />
           ))}
         </Box>
 
+        <Paper
+          variant="outlined"
+          sx={{
+            p: { xs: 2, sm: 2.5 },
+            minWidth: 0,
+            borderRadius: "8px",
+            borderColor: "#E2E8F0",
+            bgcolor: "background.paper",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 1,
+              mb: 2,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <FilterAltOutlined sx={{ color: "primary.main", fontSize: 22 }} />
+
+              <Typography sx={{ fontWeight: 600 }}>Bộ lọc sản phẩm</Typography>
+            </Box>
+
+            <Button
+              type="button"
+              size="small"
+              onClick={handleClearFilters}
+              disabled={!hasActiveFilters}
+              sx={{ textTransform: "none" }}
+            >
+              Xóa bộ lọc
+            </Button>
+          </Box>
+
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "minmax(0, 1fr)",
+                md: "minmax(0, 2fr) minmax(0, 1fr)",
+              },
+              gap: 2,
+            }}
+          >
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                component="label"
+                htmlFor="product-search"
+                variant="body2"
+                sx={{
+                  display: "block",
+                  mb: 0.75,
+                  fontWeight: 500,
+                }}
+              >
+                Tìm kiếm
+              </Typography>
+
+              <TextField
+                id="product-search"
+                fullWidth
+                size="small"
+                placeholder="Tìm tên sản phẩm hoặc SKU"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchRounded
+                          sx={{ fontSize: 20, color: "text.secondary" }}
+                        />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "8px",
+                    bgcolor: "#F8FAFC",
+                  },
+                }}
+              />
+            </Box>
+
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                id="product-category-label"
+                variant="body2"
+                sx={{
+                  display: "block",
+                  mb: 0.75,
+                  fontWeight: 500,
+                }}
+              >
+                Danh mục
+              </Typography>
+
+              <TextField
+                select
+                fullWidth
+                size="small"
+                value={category}
+                onChange={(event) => setCategory(event.target.value)}
+                slotProps={{
+                  select: {
+                    displayEmpty: true,
+                    inputProps: {
+                      "aria-labelledby": "product-category-label",
+                    },
+                  },
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "8px",
+                    bgcolor: "#F8FAFC",
+                  },
+                }}
+              >
+                <MenuItem value="">Tất cả danh mục</MenuItem>
+
+                {categories.map((item) => (
+                  <MenuItem key={item} value={item}>
+                    {item}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Box>
+          </Box>
+
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 1,
+              mt: 2,
+            }}
+          >
+            {query !== "" && (
+              <Chip
+                size="small"
+                label={`Tìm kiếm: ${search.trim()}`}
+                onDelete={() => setSearch("")}
+                sx={{
+                  maxWidth: "100%",
+                  bgcolor: "#EFF6FF",
+                  color: "#2563EB",
+                }}
+              />
+            )}
+
+            {category !== "" && (
+              <Chip
+                size="small"
+                label={`Danh mục: ${category}`}
+                onDelete={() => setCategory("")}
+                sx={{
+                  maxWidth: "100%",
+                  bgcolor: "#EFF6FF",
+                  color: "#2563EB",
+                }}
+              />
+            )}
+
+            {stockFilter !== "" && (
+              <Chip
+                size="small"
+                label={
+                  stockFilter === "low"
+                    ? "Tồn kho: Sắp hết hàng"
+                    : "Tồn kho: Hết hàng"
+                }
+                onDelete={() => setStockFilter("")}
+                sx={{
+                  maxWidth: "100%",
+                  bgcolor: "#EFF6FF",
+                  color: "#2563EB",
+                }}
+              />
+            )}
+
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              aria-live="polite"
+            >
+              Hiển thị {filteredProducts.length} / {products.length} sản phẩm
+            </Typography>
+          </Box>
+        </Paper>
         <ProductTable
-          products={products}
+          products={filteredProducts}
+          onClearFilters={handleClearFilters}
           onEdit={handleEditProduct}
           manageProducts={manageProducts}
           disabled={isSaving}
