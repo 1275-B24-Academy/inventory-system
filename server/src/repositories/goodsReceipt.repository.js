@@ -11,12 +11,13 @@ class GoodsReceiptRepository {
     });
   }
 
-  async createWithItems(createdBy, items) {
+  async createWithItems(createdBy, items, receiptType = "NORMAL") {
     // Một lệnh create kèm nested create cho các dòng: Prisma tự chạy trong 1 transaction,
     // lỗi ở dòng nào thì cả phiếu cũng không được tạo.
     return this.prisma.goodsReceipt.create({
       data: {
         created_by: createdBy,
+        receipt_type: receiptType,
         items: {
           create: items.map((item) => ({
             product_id: item.productId,
