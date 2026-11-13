@@ -77,12 +77,13 @@ export default function ProductsPage() {
 
     const stock = Number(product.stock);
 
-    const matchesStock =
-      stockFilter === "out"
-        ? stock === 0
-        : stockFilter === "low"
-          ? stock > 0 && stock <= LOW_STOCK_THRESHOLD
-          : true;
+    let matchesStock = true;
+
+    if (stockFilter === "out") {
+      matchesStock = stock === 0;
+    } else if (stockFilter === "low") {
+      matchesStock = stock > 0 && stock <= LOW_STOCK_THRESHOLD;
+    }
 
     return matchesSearch && matchesCategory && matchesStock;
   });
@@ -455,7 +456,7 @@ export default function ProductsPage() {
               mt: 2,
             }}
           >
-            {query !== "" && (
+            {query && (
               <Chip
                 size="small"
                 label={`Tìm kiếm: ${search.trim()}`}
@@ -468,7 +469,7 @@ export default function ProductsPage() {
               />
             )}
 
-            {category !== "" && (
+            {category && (
               <Chip
                 size="small"
                 label={`Danh mục: ${category}`}
@@ -481,7 +482,7 @@ export default function ProductsPage() {
               />
             )}
 
-            {stockFilter !== "" && (
+            {stockFilter && (
               <Chip
                 size="small"
                 label={
@@ -498,13 +499,15 @@ export default function ProductsPage() {
               />
             )}
 
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              aria-live="polite"
-            >
-              Hiển thị {filteredProducts.length} / {products.length} sản phẩm
-            </Typography>
+            {products.length > 0 && (
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                aria-live="polite"
+              >
+                Hiển thị {filteredProducts.length} / {products.length} sản phẩm
+              </Typography>
+            )}
           </Box>
         </Paper>
         <ProductTable
