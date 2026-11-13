@@ -84,7 +84,6 @@ export default function ProductsPage() {
     const productData = {
       ...formData,
       price: Number(formData.price),
-      stock: Number(formData.stock),
     };
 
     const editingId = editingProduct?.id ?? null;
