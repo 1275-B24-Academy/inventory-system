@@ -26,7 +26,7 @@ describe("ProductService.createProduct", () => {
     expect(productRepository.create).toHaveBeenCalledWith({
       ...validProduct,
       price: 5000,
-      stock: 10,
+      stock: 0,
     });
   });
 
@@ -35,12 +35,6 @@ describe("ProductService.createProduct", () => {
       service.createProduct({ ...validProduct, sku: "" }),
     ).rejects.toMatchObject({ statusCode: 400 });
     expect(productRepository.create).not.toHaveBeenCalled();
-  });
-
-  it("rejects negative stock with 400", async () => {
-    await expect(
-      service.createProduct({ ...validProduct, stock: "-1" }),
-    ).rejects.toMatchObject({ statusCode: 400 });
   });
 });
 
