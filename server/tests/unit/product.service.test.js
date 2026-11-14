@@ -24,9 +24,11 @@ describe("ProductService.createProduct", () => {
     await service.createProduct(validProduct);
 
     expect(productRepository.create).toHaveBeenCalledWith({
-      ...validProduct,
+      name: validProduct.name,
+      sku: validProduct.sku,
+      category: validProduct.category,
+      supplier: validProduct.supplier,
       price: 5000,
-      stock: 10,
     });
   });
 
@@ -36,18 +38,13 @@ describe("ProductService.createProduct", () => {
     ).rejects.toMatchObject({ statusCode: 400 });
     expect(productRepository.create).not.toHaveBeenCalled();
   });
-
-  it("rejects negative stock with 400", async () => {
-    await expect(
-      service.createProduct({ ...validProduct, stock: "-1" }),
-    ).rejects.toMatchObject({ statusCode: 400 });
-  });
 });
 
 // TODO cho TTS: viết unit test cho updateProduct (làm tương tự describe ở trên).
 describe("ProductService.updateProduct", () => {
   it.todo("rejects invalid product id with 400");
-  it.todo("rejects empty price or stock with 400");
+  it.todo("rejects empty price with 400");
+  it.todo("rejects any stock field with 400");
   it.todo("throws 404 when repository returns undefined");
   it.todo("returns the updated product");
 });

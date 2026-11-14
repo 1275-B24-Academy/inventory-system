@@ -16,7 +16,6 @@ const fields = [
   { name: "category", label: "Danh mục" },
   { name: "supplier", label: "Nhà cung cấp" },
   { name: "price", label: "Giá bán", type: "number" },
-  { name: "stock", label: "Số lượng", type: "number" },
 ];
 
 export default function ProductForm({
@@ -32,7 +31,6 @@ export default function ProductForm({
     category: initialData?.category ?? "",
     supplier: initialData?.supplier ?? "",
     price: initialData?.price ?? "",
-    stock: initialData?.stock ?? "",
   });
 
   function handleInputChange(e) {

@@ -55,7 +55,7 @@ describe("/api/products", () => {
       .send(newProduct);
 
     expect(res.status).toBe(201);
-    expect(res.body).toMatchObject({ sku: "PEN-001", price: 5000, stock: 10 });
+    expect(res.body).toMatchObject({ sku: "PEN-001", price: 5000, stock: 0 });
     expect(await prisma.product.count()).toBe(1);
   });
 
