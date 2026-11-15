@@ -9,61 +9,23 @@ class AuthService {
     this.refreshTokenRepository = refreshTokenRepository;
   }
 
-  async register(data = {}) {
-    if (data === null || typeof data !== "object" || Array.isArray(data)) {
-      throw createError("Dữ liệu không hợp lệ", 400);
-    }
-
-    const { name, email, password, confirmPassword } = data;
-    if (
-      typeof name !== "string" ||
-      typeof email !== "string" ||
-      typeof password !== "string" ||
-      typeof confirmPassword !== "string"
-    ) {
-      throw createError("Thông tin không hợp lệ", 400);
-    }
-    if (!name.trim() || !email.trim() || !password || !confirmPassword) {
-      throw createError("Vui lòng nhập đầy đủ thông tin", 400);
-    }
-    const nomalizedEmail = email.trim().toLowerCase();
-    const nomalizedName = name.trim();
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nomalizedEmail)) {
-      throw createError("Email không hợp lệ", 400);
-    }
-    if (password.length < 6 || password.length > 20) {
-      throw createError("Mật khẩu phải từ 6 đến 20 ký tự", 400);
-    }
-    if (password !== confirmPassword) {
-      throw createError("Mật khẩu xác nhận không khớp", 400);
-    }
-    const existingUser = await this.userRepository.findbyEmail(nomalizedEmail);
+  // data đã được validate (và chuẩn hóa trim/lowercase) bởi registerBody ở route.
+  async register({ name, email, password }) {
+    const existingUser = await this.userRepository.findbyEmail(email);
     if (existingUser) {
       throw createError("Email đã được sử dụng", 409);
     }
 
     const passwordHash = await argon2.hash(password);
     return await this.userRepository.create({
-      name: nomalizedName,
-      email: nomalizedEmail,
+      name,
+      email,
       password_hash: passwordHash,
     });
   }
-  async login(data = {}) {
-    if (data === null || typeof data !== "object" || Array.isArray(data)) {
-      throw createError("Dữ liệu không hợp lệ", 400);
-    }
-
-    const { email, password } = data;
-    if (typeof email !== "string" || typeof password !== "string") {
-      throw createError("Email và mật khẩu không hợp lệ", 400);
-    }
-    const nomalizedEmail = email.trim().toLowerCase();
-    if (!nomalizedEmail || !password) {
-      throw createError("Vui lòng nhập đầy đủ thông tin", 400);
-    }
-    const user = await this.userRepository.findbyEmail(nomalizedEmail);
+  // data đã được validate bởi loginBody ở route.
+  async login({ email, password }) {
+    const user = await this.userRepository.findbyEmail(email);
     if (!user) {
       throw createError("Email hoặc mật khẩu không đúng", 401);
     }

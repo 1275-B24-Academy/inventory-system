@@ -39,3 +39,38 @@ describe("POST /api/auth/login", () => {
     expect(res.status).toBe(403);
   });
 });
+
+describe("POST /api/auth/register validation", () => {
+  beforeEach(resetDb);
+
+  const valid = {
+    name: "An",
+    email: "an@example.com",
+    password: "secret123",
+    confirmPassword: "secret123",
+  };
+
+  it("returns 400 when confirmPassword does not match", async () => {
+    const res = await request(app)
+      .post("/api/auth/register")
+      .send({ ...valid, confirmPassword: "other-pass" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe("Mật khẩu xác nhận không khớp");
+  });
+
+  it("returns 400 when the request has no body", async () => {
+    const res = await request(app).post("/api/auth/register");
+
+    expect(res.status).toBe(400);
+  });
+
+  it("normalizes email before saving", async () => {
+    const res = await request(app)
+      .post("/api/auth/register")
+      .send({ ...valid, email: "  An@Example.COM " });
+
+    expect(res.status).toBe(201);
+    expect(res.body.user.email).toBe("an@example.com");
+  });
+});
