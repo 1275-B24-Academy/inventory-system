@@ -6,6 +6,8 @@ import { userRepository, goodsReceiptController } from "../container.js";
 
 const router = express.Router();
 
+// TODO cho TTS (#48): schema cho body { items, receiptType } và param :id, gắn validate(...)
+// vào 2 route bên dưới (xem auth.routes.js làm mẫu), rồi xóa `if` validate trong service.
 router.use(
   requireLogin,
   loadCurrentUser(userRepository),

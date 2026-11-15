@@ -8,6 +8,9 @@ import { userRepository, goodsIssueController } from "../container.js";
 
 const router = express.Router();
 
+// TODO cho TTS (#48): schema cho body { items } và param :id, gắn validate(...) vào 2 route
+// bên dưới (xem auth.routes.js làm mẫu), rồi xóa `if` validate trong service.
+
 // Middleware áp dụng cho tất cả API xuất kho.
 router.use(
   requireLogin,
