@@ -18,7 +18,7 @@ export default function MainLayout({ user, onLogout, disabled, children }) {
           display: { xs: "none", md: "block" },
         }}
       >
-        <Stack direction="row" spacing={1} alignItems="center">
+        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
           <Inventory2Outlined color="primary" sx={{ fontSize: 32 }} />
           <Typography variant="h6">Kho Việt</Typography>
         </Stack>
@@ -34,8 +34,9 @@ export default function MainLayout({ user, onLogout, disabled, children }) {
         <Stack
           direction="row"
           spacing={1}
-          alignItems="center"
+
           sx={{
+            alignItems: "center",
             p: 1.5,
             borderRadius: 2,
             bgcolor: "#EFF6FF",
@@ -53,8 +54,7 @@ export default function MainLayout({ user, onLogout, disabled, children }) {
         <Stack
           component="header"
           direction="row"
-          alignItems="center"
-          justifyContent="space-between"
+
           spacing={2}
           sx={{
             alignItems: "center",

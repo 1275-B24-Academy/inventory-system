@@ -55,7 +55,7 @@ describe("/api/products", () => {
       .send(newProduct);
 
     expect(res.status).toBe(201);
-    expect(res.body).toMatchObject({ sku: "PEN-001", price: 5000, stock: 10 });
+    expect(res.body).toMatchObject({ sku: "PEN-001", price: 5000, stock: 0 });
     expect(await prisma.product.count()).toBe(1);
   });
 
@@ -72,8 +72,56 @@ describe("/api/products", () => {
     expect(res.body.message).toBe("SKU đã tồn tại");
   });
 
+  it("returns 400 when creating a product with invalid data", async () => {
+    const { accessToken } = await loginAs({ role: "admin" });
+
+    const res = await request(app)
+      .post("/api/products")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ ...newProduct, price: -5 });
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe("Giá phải là số không âm");
+    expect(await prisma.product.count()).toBe(0);
+  });
+
+  it("returns 403 (not 400) for staff sending invalid data", async () => {
+    const { accessToken } = await loginAs({ role: "staff" });
+
+    const res = await request(app)
+      .post("/api/products")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({});
+
+    expect(res.status).toBe(403);
+  });
+
+  it("returns 400 when updating with a non-numeric id", async () => {
+    const { accessToken } = await loginAs({ role: "admin" });
+
+    const res = await request(app)
+      .put("/api/products/abc")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send(newProduct);
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe("ID sản phẩm không hợp lệ");
+  });
+
+  it("returns 400 when updating with a stock field", async () => {
+    const { accessToken } = await loginAs({ role: "admin" });
+    const product = await createProduct();
+
+    const res = await request(app)
+      .put(`/api/products/${product.id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send(newProduct); // newProduct có stock: 10
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe("Tồn kho chỉ thay đổi qua phiếu nhập/xuất");
+  });
+
   // TODO cho TTS: viết các test còn thiếu (xem các test phía trên làm mẫu).
-  it.todo("returns 400 when creating a product with invalid data");
   it.todo("lets admin update a product (PUT /api/products/:id)");
   it.todo("forbids staff from updating products");
   it.todo("returns 404 when updating a product that does not exist");

@@ -13,7 +13,11 @@ class GoodsReceiptService {
     return this.goodsReceiptRepository.createDraft(createdBy);
   }
 
-  async createWithItems(createdBy, items) {
+  async createWithItems(createdBy, items, receiptType = "NORMAL") {
+    if (!["NORMAL", "OPENING"].includes(receiptType)) {
+      throw badRequest("Loại phiếu nhập phải là NORMAL hoặc OPENING.");
+    }
+
     function badRequest(message) {
       const error = new Error(message);
       error.statusCode = 400;
@@ -56,7 +60,11 @@ class GoodsReceiptService {
       validItems.push({ productId, quantity });
     }
 
-    return this.goodsReceiptRepository.createWithItems(createdBy, validItems);
+    return this.goodsReceiptRepository.createWithItems(
+      createdBy,
+      validItems,
+      receiptType,
+    );
   }
 
   async confirm(receiptId, confirmedBy) {

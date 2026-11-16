@@ -29,20 +29,20 @@ class ProductRepository {
   }
 
   async create(product) {
-    const { name, sku, category, supplier, price, stock } = product;
+    const { name, sku, category, supplier, price } = product;
     const created = await this.prisma.product.create({
-      data: { name, sku, category, supplier, price, stock },
+      data: { name, sku, category, supplier, price, stock: 0 },
       select: productSelect,
     });
     return toProductResponse(created);
   }
 
   async update(id, product) {
-    const { name, sku, category, supplier, price, stock } = product;
+    const { name, sku, category, supplier, price } = product;
     try {
       const updated = await this.prisma.product.update({
         where: { id },
-        data: { name, sku, category, supplier, price, stock },
+        data: { name, sku, category, supplier, price },
         select: productSelect,
       });
       return toProductResponse(updated);

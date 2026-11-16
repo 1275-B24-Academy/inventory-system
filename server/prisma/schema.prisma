@@ -69,10 +69,12 @@ model Product {
   @@map("products")
 }
 
+
 // Phiếu nhập
 model GoodsReceipt {
   id           Int       @id @default(autoincrement())
-  status       String    @default("draft") // CHECK: draft | confirmed
+  receipt_type String    @default("NORMAL") // CHECK: NORMAL | OPENING
+  status       String    @default("draft") // CHECK: draft | confirmed  
   created_by   Int
   created_at   DateTime  @default(now()) @db.Timestamptz(6)
   confirmed_by Int?

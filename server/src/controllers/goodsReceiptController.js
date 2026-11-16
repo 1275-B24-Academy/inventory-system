@@ -20,10 +20,12 @@ class goodsReceiptController {
     try {
       const createdBy = Number(req.user.id);
       const items = req.body?.items;
+      const receiptType = req.body?.receiptType;
 
       const receipt = await this.goodsReceiptService.createWithItems(
         createdBy,
         items,
+        receiptType,
       );
 
       return res.status(201).json({
