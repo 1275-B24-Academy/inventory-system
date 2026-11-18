@@ -6,7 +6,7 @@ class GoodsIssueController {
   createWithItems = async (req, res, next) => {
     try {
       const createdBy = req.user.id;
-      const { items } = req.body;
+      const { items } = req.validated.body;
       const issue = await this.goodsIssueService.createWithItems(
         createdBy,
         items,
@@ -22,7 +22,7 @@ class GoodsIssueController {
 
   confirm = async (req, res, next) => {
     try {
-      const issueId = Number(req.params.id);
+      const issueId = req.validated.params.id;
       const confirmedBy = req.user.id;
 
       const issue = await this.goodsIssueService.confirm(issueId, confirmedBy);

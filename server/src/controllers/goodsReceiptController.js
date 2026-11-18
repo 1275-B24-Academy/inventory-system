@@ -19,8 +19,7 @@ class goodsReceiptController {
   createWithItems = async (req, res, next) => {
     try {
       const createdBy = Number(req.user.id);
-      const items = req.body?.items;
-      const receiptType = req.body?.receiptType;
+      const { items, receiptType } = req.validated.body;
 
       const receipt = await this.goodsReceiptService.createWithItems(
         createdBy,
@@ -39,7 +38,7 @@ class goodsReceiptController {
 
   confirm = async (req, res, next) => {
     try {
-      const receiptId = Number(req.params.id);
+      const receiptId = req.validated.params.id;
       const confirmedBy = Number(req.user.id);
 
       const receipt = await this.goodsReceiptService.confirm(
