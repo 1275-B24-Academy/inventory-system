@@ -5,7 +5,7 @@ class AuthController {
   }
   register = async (req, res, next) => {
     try {
-      const user = await this.authService.register(req.body);
+      const user = await this.authService.register(req.validated.body);
       return res.status(201).json({
         message: "Đăng ký thành công",
         user,
@@ -17,7 +17,7 @@ class AuthController {
   login = async (req, res, next) => {
     try {
       const { user, refreshToken, refreshTokenExpiresAt } =
-        await this.authService.login(req.body);
+        await this.authService.login(req.validated.body);
 
       const accessToken = createAccessToken(user.id);
       res.cookie("refreshToken", refreshToken, {

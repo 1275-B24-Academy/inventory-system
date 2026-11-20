@@ -8,6 +8,7 @@ import {
   TableHead,
   TableRow,
   Typography,
+  Button,
 } from "@mui/material";
 
 import ProductRow from "./ProductRow";
@@ -16,12 +17,15 @@ export default function ProductTable({
   products,
   onEdit,
   manageProducts,
+  onClearFilters,
   disabled,
 }) {
   return (
     <Paper
       variant="outlined"
       sx={{
+        minWidth: 0,
+        width: "100%",
         borderRadius: "8px",
         overflow: "hidden",
         borderColor: "#E2E8F0",
@@ -37,6 +41,7 @@ export default function ProductTable({
       <TableContainer
         sx={{
           maxHeight: 312,
+          overflowX: "auto",
           overflowY: "auto",
           scrollSnapType: "y mandatory",
           scrollPaddingTop: "56px",
@@ -86,7 +91,11 @@ export default function ProductTable({
                   align="center"
                   sx={{ py: 6, color: "text.secondary" }}
                 >
-                  Chưa có sản phẩm nào.
+                  <Typography>Không tìm thấy sản phẩm nào.</Typography>
+
+                  <Button type="button" onClick={onClearFilters} sx={{ mt: 1 }}>
+                    Xóa bộ lọc
+                  </Button>
                 </TableCell>
               </TableRow>
             ) : (

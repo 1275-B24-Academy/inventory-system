@@ -15,7 +15,9 @@ class ProductController {
 
   createProduct = async (req, res, next) => {
     try {
-      const createdProduct = await this.productService.createProduct(req.body);
+      const createdProduct = await this.productService.createProduct(
+        req.validated.body,
+      );
 
       return res.status(201).json({
         ...createdProduct,
@@ -28,8 +30,8 @@ class ProductController {
   updateProduct = async (req, res, next) => {
     try {
       const updatedProduct = await this.productService.updateProduct(
-        req.params.id,
-        req.body,
+        req.validated.params.id,
+        req.validated.body,
       );
       return res.json({
         ...updatedProduct,
