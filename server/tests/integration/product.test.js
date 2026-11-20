@@ -122,8 +122,124 @@ describe("/api/products", () => {
   });
 
   // TODO cho TTS: viết các test còn thiếu (xem các test phía trên làm mẫu).
-  it.todo("lets admin update a product (PUT /api/products/:id)");
-  it.todo("forbids staff from updating products");
-  it.todo("returns 404 when updating a product that does not exist");
-  it.todo("returns 409 when updating a product to an existing SKU");
+  it("lets admin update a product (PUT /api/products/:id)", async () => {
+    const { accessToken } = await loginAs({ role: "admin" });
+    const product = await createProduct({ sku: "OLD-001" });
+
+    const updatedData = {
+      name: "Bút bi mới",
+      sku: "NEW-001",
+      category: "Văn phòng phẩm",
+      supplier: "Thiên Long",
+      price: 7000,
+    };
+
+    const res = await request(app)
+      .put(`/api/products/${product.id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send(updatedData);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      id: product.id,
+      ...updatedData,
+    });
+
+    const savedProduct = await prisma.product.findUnique({
+      where: { id: product.id },
+    });
+
+    expect(savedProduct).toMatchObject({
+      name: updatedData.name,
+      sku: updatedData.sku,
+      category: updatedData.category,
+      supplier: updatedData.supplier,
+    });
+
+    expect(savedProduct.price.toNumber()).toBe(updatedData.price);
+    expect(savedProduct.stock).toBe(product.stock);
+  });
+
+  it("forbids staff from updating products", async () => {
+    const { accessToken } = await loginAs({ role: "staff" });
+    const product = await createProduct({ sku: "ORIGINAL-001" });
+
+    const res = await request(app)
+      .put(`/api/products/${product.id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({
+        name: "Tên bị sửa",
+        sku: "CHANGED-001",
+        category: "Danh mục mới",
+        supplier: "Nhà cung cấp mới",
+        price: 9000,
+      });
+
+    expect(res.status).toBe(403);
+
+    const savedProduct = await prisma.product.findUnique({
+      where: { id: product.id },
+    });
+
+    expect(savedProduct).toMatchObject({
+      name: product.name,
+      sku: product.sku,
+      category: product.category,
+      supplier: product.supplier,
+      price: product.price,
+      stock: product.stock,
+    });
+  });
+
+  it("returns 404 when updating a product that does not exist", async () => {
+    const { accessToken } = await loginAs({ role: "admin" });
+
+    const res = await request(app)
+      .put("/api/products/999999")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({
+        name: "Bút bi",
+        sku: "PEN-001",
+        category: "Văn phòng phẩm",
+        supplier: "Thiên Long",
+        price: 5000,
+      });
+
+    expect(res.status).toBe(404);
+    expect(await prisma.product.count()).toBe(0);
+  });
+
+  it("returns 409 when updating a product to an existing SKU", async () => {
+    const { accessToken } = await loginAs({ role: "admin" });
+
+    await createProduct({ sku: "EXISTING-001" });
+    const product = await createProduct({ sku: "ORIGINAL-001" });
+
+    const res = await request(app)
+      .put(`/api/products/${product.id}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({
+        name: "Tên mới",
+        sku: "EXISTING-001",
+        category: "Văn phòng phẩm",
+        supplier: "Thiên Long",
+        price: 7000,
+      });
+
+    expect(res.status).toBe(409);
+
+    const savedProduct = await prisma.product.findUnique({
+      where: { id: product.id },
+    });
+
+    expect(savedProduct).toMatchObject({
+      name: product.name,
+      sku: product.sku,
+      category: product.category,
+      supplier: product.supplier,
+      price: product.price,
+      stock: product.stock,
+    });
+    expect(await prisma.product.count()).toBe(2);
+  });
 });

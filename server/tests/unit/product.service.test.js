@@ -30,6 +30,43 @@ describe("ProductService.createProduct", () => {
 
 // TODO cho TTS: viết unit test cho updateProduct (làm tương tự describe ở trên).
 describe("ProductService.updateProduct", () => {
-  it.todo("throws 404 when repository returns undefined");
-  it.todo("returns the updated product");
+  let productRepository;
+  let service;
+
+  const validProduct = {
+    name: "Bút bi",
+    sku: "PEN-001",
+    category: "Văn phòng phẩm",
+    supplier: "Thiên Long",
+    price: 5000,
+  };
+
+  beforeEach(() => {
+    productRepository = {
+      update: vi.fn().mockResolvedValue(undefined),
+    };
+
+    service = new ProductService(productRepository);
+  });
+
+  it("throws 404 when repository returns undefined", async () => {
+    await expect(service.updateProduct(1, validProduct)).rejects.toMatchObject({
+      statusCode: 404,
+    });
+  });
+
+  it("returns the updated product", async () => {
+    const updatedProduct = {
+      id: 1,
+      ...validProduct,
+      stock: 0,
+    };
+
+    productRepository.update.mockResolvedValue(updatedProduct);
+
+    const result = await service.updateProduct(1, validProduct);
+
+    expect(productRepository.update).toHaveBeenCalledWith(1, validProduct);
+    expect(result).toEqual(updatedProduct);
+  });
 });

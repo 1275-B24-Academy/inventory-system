@@ -1,6 +1,9 @@
 import { execFileSync } from "node:child_process";
 import pg from "pg";
+import { createRequire } from "node:module";
 import { TEST_DATABASE_URL, TEST_ENV } from "../testEnv.js";
+
+const require = createRequire(import.meta.url);
 
 // Tạo DB test nếu chưa có. Postgres không tự tạo DB khi có kết nối tới,
 // nên phải nối vào DB hệ thống `postgres` để chạy CREATE DATABASE.
@@ -37,8 +40,12 @@ export default async function setup() {
 
   await ensureDatabase(dbName);
 
-  execFileSync("npx", ["--no-install", "prisma", "migrate", "deploy"], {
-    stdio: "inherit",
-    env: { ...process.env, ...TEST_ENV },
-  });
+  execFileSync(
+    process.execPath,
+    [require.resolve("prisma/build/index.js"), "migrate", "deploy"],
+    {
+      stdio: "inherit",
+      env: { ...process.env, ...TEST_ENV },
+    },
+  );
 }

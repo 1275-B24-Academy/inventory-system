@@ -3,6 +3,11 @@ import requireRoles from "../middlewares/requireRoles.js";
 import requireLogin from "../middlewares/requireLogin.js";
 import loadCurrentUser from "../middlewares/loadCurrentUser.js";
 import { userRepository, goodsReceiptController } from "../container.js";
+import validate from "../middlewares/validate.js";
+import {
+  createGoodsReceiptBody,
+  goodsReceiptIdParams,
+} from "../schemas/goodsReceipt.schemas.js";
 
 const router = express.Router();
 
@@ -14,7 +19,16 @@ router.use(
   requireRoles(["admin"]),
 );
 
-router.post("/", goodsReceiptController.createWithItems);
-router.post("/:id/confirm", goodsReceiptController.confirm);
+router.post(
+  "/",
+  validate({ body: createGoodsReceiptBody }),
+  goodsReceiptController.createWithItems,
+);
+
+router.post(
+  "/:id/confirm",
+  validate({ params: goodsReceiptIdParams }),
+  goodsReceiptController.confirm,
+);
 
 export default router;

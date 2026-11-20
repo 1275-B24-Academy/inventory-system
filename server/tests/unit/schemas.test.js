@@ -5,6 +5,14 @@ import {
   productIdParams,
   updateProductBody,
 } from "../../src/schemas/product.schemas.js";
+import {
+  createGoodsReceiptBody,
+  goodsReceiptIdParams,
+} from "../../src/schemas/goodsReceipt.schemas.js";
+import {
+  createGoodsIssueBody,
+  goodsIssueIdParams,
+} from "../../src/schemas/goodsIssue.schemas.js";
 
 // Test schema Zod thuần: không cần mock, không cần DB. Mỗi test chỉ gọi safeParse.
 // Helper: lấy danh sách message lỗi (rỗng nếu hợp lệ).
@@ -177,10 +185,116 @@ describe("productIdParams", () => {
 });
 
 describe("goods receipt / goods issue schemas", () => {
-  it.todo("accepts items with positive integer productId and quantity");
-  it.todo("rejects empty items");
-  it.todo("rejects negative, zero or fractional quantity");
-  it.todo("rejects duplicated productId");
-  it.todo("receiptType defaults to NORMAL, rejects unknown value");
-  it.todo("id params: rejects non-numeric id");
+  const bodySchemas = [createGoodsReceiptBody, createGoodsIssueBody];
+
+  const validItems = [
+    { productId: 1, quantity: 2 },
+    { productId: 2, quantity: 3 },
+  ];
+
+  it("accepts items with positive integer productId and quantity", () => {
+    for (const schema of bodySchemas) {
+      const result = schema.safeParse({
+        items: validItems.map((item) => ({
+          ...item,
+          extraField: "ignored",
+        })),
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.data.items).toEqual(validItems);
+
+      for (const field of ["productId", "quantity"]) {
+        for (const value of ["1", null, true]) {
+          expect(
+            schema.safeParse({
+              items: [{ productId: 1, quantity: 2, [field]: value }],
+            }).success,
+          ).toBe(false);
+        }
+      }
+    }
+  });
+
+  it("rejects empty items", () => {
+    for (const schema of bodySchemas) {
+      for (const items of [[], undefined, null, {}]) {
+        expect(schema.safeParse({ items }).success).toBe(false);
+      }
+
+      for (const item of [null, [], "invalid"]) {
+        expect(schema.safeParse({ items: [item] }).success).toBe(false);
+      }
+    }
+  });
+
+  it("rejects negative, zero or fractional quantity", () => {
+    for (const schema of bodySchemas) {
+      for (const field of ["productId", "quantity"]) {
+        for (const value of [-1, 0, 1.5]) {
+          const result = schema.safeParse({
+            items: [{ productId: 1, quantity: 2, [field]: value }],
+          });
+
+          expect(result.success).toBe(false);
+        }
+      }
+    }
+  });
+
+  it("rejects duplicated productId", () => {
+    for (const schema of bodySchemas) {
+      const result = schema.safeParse({
+        items: [
+          { productId: 1, quantity: 2 },
+          { productId: 1, quantity: 3 },
+        ],
+      });
+
+      expect(result.success).toBe(false);
+      expect(
+        result.error.issues.some((issue) => issue.path[0] === "items"),
+      ).toBe(true);
+    }
+  });
+
+  it("receiptType defaults to NORMAL, rejects unknown value", () => {
+    const result = createGoodsReceiptBody.safeParse({
+      items: validItems,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.data.receiptType).toBe("NORMAL");
+
+    for (const receiptType of ["NORMAL", "OPENING"]) {
+      const parsed = createGoodsReceiptBody.safeParse({
+        items: validItems,
+        receiptType,
+      });
+
+      expect(parsed.success).toBe(true);
+      expect(parsed.data.receiptType).toBe(receiptType);
+    }
+
+    for (const receiptType of ["UNKNOWN", "", null]) {
+      expect(
+        createGoodsReceiptBody.safeParse({
+          items: validItems,
+          receiptType,
+        }).success,
+      ).toBe(false);
+    }
+  });
+
+  it("id params: rejects non-numeric id", () => {
+    for (const schema of [goodsReceiptIdParams, goodsIssueIdParams]) {
+      expect(schema.safeParse({ id: "12" }).data).toEqual({
+        id: 12,
+      });
+
+      for (const id of ["abc", "1.5", "-1", "0", "", "0x10"]) {
+        expect(schema.safeParse({ id }).success).toBe(false);
+      }
+    }
+  });
 });
