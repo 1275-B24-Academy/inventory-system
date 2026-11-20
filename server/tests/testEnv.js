@@ -8,8 +8,7 @@ dotenv.config({ quiet: true });
 // - CI: Postgres service của GitHub Actions, truyền qua biến TEST_DATABASE_URL.
 export const TEST_DATABASE_URL =
   process.env.TEST_DATABASE_URL ??
-  "postgresql://postgres:562004@localhost:5432/inventory_test";
-
+  "postgresql://postgres:postgres@localhost:5432/inventory_test";
 // Env cho process chạy test. Vitest set trước khi import code của app,
 // và dotenv không ghi đè biến đã có, nên giá trị trong server/.env sẽ không lọt vào test.
 export const TEST_ENV = {
