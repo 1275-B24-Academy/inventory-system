@@ -9,7 +9,6 @@ dotenv.config({ quiet: true });
 export const TEST_DATABASE_URL =
   process.env.TEST_DATABASE_URL ??
   "postgresql://postgres:postgres@localhost:5432/inventory_test";
-
 // Env cho process chạy test. Vitest set trước khi import code của app,
 // và dotenv không ghi đè biến đã có, nên giá trị trong server/.env sẽ không lọt vào test.
 export const TEST_ENV = {

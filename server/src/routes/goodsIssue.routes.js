@@ -6,6 +6,12 @@ import loadCurrentUser from "../middlewares/loadCurrentUser.js";
 
 import { userRepository, goodsIssueController } from "../container.js";
 
+import validate from "../middlewares/validate.js";
+import {
+  createGoodsIssueBody,
+  goodsIssueIdParams,
+} from "../schemas/goodsIssue.schemas.js";
+
 const router = express.Router();
 
 // TODO cho TTS (#48): schema cho body { items } và param :id, gắn validate(...) vào 2 route
@@ -19,9 +25,16 @@ router.use(
 );
 
 // Tạo phiếu xuất kho.
-router.post("/", goodsIssueController.createWithItems);
+router.post(
+  "/",
+  validate({ body: createGoodsIssueBody }),
+  goodsIssueController.createWithItems,
+);
 
-// Xác nhận phiếu xuất kho.
-router.post("/:id/confirm", goodsIssueController.confirm);
+router.post(
+  "/:id/confirm",
+  validate({ params: goodsIssueIdParams }),
+  goodsIssueController.confirm,
+);
 
 export default router;
