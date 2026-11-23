@@ -92,8 +92,22 @@ class GoodsIssueRepository {
         }
 
         // 4. Ghi lịch sử xuất kho.
+        const updatedProduct = await tx.product.findUniqueOrThrow({
+          where: { id: item.product_id },
+          select: { stock: true },
+        });
+
         await tx.stockMovement.create({
-          data: { issue_item_id: item.id, quantity: item.quantity },
+          data: {
+            issue_item_id: item.id,
+            product_id: item.product_id,
+            type: "ISSUE",
+            quantity: -item.quantity,
+            balance_after: updatedProduct.stock,
+            document_type: "GOODS_ISSUE",
+            document_id: issueId,
+            created_by: confirmedBy,
+          },
         });
       }
 

@@ -132,14 +132,21 @@ model GoodsIssueItem {
   @@map("goods_issue_items")
 }
 
-// Lịch sử biến động kho: mỗi dòng gắn với đúng 1 dòng phiếu nhập HOẶC phiếu xuất.
-// quantity luôn dương; chiều (+/-) suy ra từ cột nào khác NULL.
-// CHECK: quantity > 0, đúng 1 trong 2 cột receipt_item_id / issue_item_id khác NULL.
+// Nhập kho ghi quantity dương, xuất kho ghi quantity âm.
+// Dòng ADJUST có thể tăng hoặc giảm tồn và không cần gắn với dòng phiếu.
 model StockMovement {
   id              Int      @id @default(autoincrement())
   receipt_item_id Int?     @unique(map: "stock_movements_receipt_item_key", where: raw("(receipt_item_id IS NOT NULL)"))
   issue_item_id   Int?     @unique(map: "stock_movements_issue_item_key", where: raw("(issue_item_id IS NOT NULL)"))
   quantity        Int
+  product_id    Int
+  type          String
+  balance_after Int
+  unit_cost     Decimal? @db.Decimal(14, 2)
+  document_type String?
+  document_id   Int?
+  document_no   String?
+  created_by    Int?
   created_at      DateTime @default(now()) @db.Timestamptz(6)
 
   receipt_item GoodsReceiptItem? @relation(fields: [receipt_item_id], references: [id], onDelete: NoAction, onUpdate: NoAction)

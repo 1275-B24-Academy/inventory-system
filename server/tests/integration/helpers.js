@@ -2,6 +2,7 @@ import argon2 from "argon2";
 import request from "supertest";
 import app from "../../src/app.js";
 import prisma from "../../src/prisma.js";
+import { expect } from "vitest";
 
 // Xóa sạch dữ liệu giữa các test, đưa id về 1. Lấy danh sách bảng từ DB
 // nên thêm bảng mới (qua migration) không cần sửa lại hàm này.
@@ -58,6 +59,32 @@ export async function createProduct(overrides = {}) {
       ...overrides,
     },
   });
+}
+export async function assertLedgerInvariant() {
+  const mismatches = await prisma.$queryRaw`
+    SELECT p.id, p.stock, COALESCE(SUM(m.quantity), 0) AS ledger_total
+    FROM products AS p
+    LEFT JOIN stock_movements AS m ON m.product_id = p.id
+    GROUP BY p.id, p.stock
+    HAVING p.stock <> COALESCE(SUM(m.quantity), 0)
+  `;
+
+  const balanceMismatches = await prisma.$queryRaw`
+  WITH latest_movement AS (
+    SELECT DISTINCT ON (product_id)
+      product_id,
+      balance_after
+    FROM stock_movements
+    ORDER BY product_id, created_at DESC, id DESC
+  )
+  SELECT p.id, p.stock, m.balance_after
+  FROM products AS p
+  JOIN latest_movement AS m ON m.product_id = p.id
+  WHERE p.stock <> m.balance_after
+`;
+
+  expect(balanceMismatches).toEqual([]);
+  expect(mismatches).toEqual([]);
 }
 
 export { app, prisma };
