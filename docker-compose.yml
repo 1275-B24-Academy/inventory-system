@@ -1,0 +1,49 @@
+# Chạy toàn bộ stack trên máy local:   docker compose up --build
+# Chỉ chạy Postgres (dev bằng npm):    docker compose up -d db
+# Xóa container + dữ liệu:             docker compose down -v
+#
+# Chỉ dùng cho dev/học. KHÔNG dùng các secret mặc định này ở production.
+
+services:
+  db:
+    image: postgres:16 # cùng phiên bản với CI (.github/workflows/ci.yml)
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: inventory
+    ports:
+      # Đổi cổng host nếu máy đã có Postgres chiếm 5432: POSTGRES_PORT=5433 docker compose up
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d inventory"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    # tini làm PID 1, chuyển SIGTERM cho node -> `docker compose down` tắt ngay thay vì chờ 10s.
+    # Chỉ là cách tạm: tắt đột ngột, chưa đóng request/pool DB. Graceful shutdown thật: ticket #63.
+    # k8s KHÔNG có tuỳ chọn này, nên handler trong code (#63) mới là cách sửa gốc.
+    init: true
+    depends_on:
+      db:
+        condition: service_healthy # chờ Postgres sẵn sàng rồi mới migrate + start
+    environment:
+      # Trong mạng compose, host của Postgres là tên service ("db"), không phải localhost.
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/inventory
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-only-change-me}
+      PORT: 3000
+      # Cookie refresh token bật cờ Secure khi NODE_ENV=production, mà localhost chạy HTTP
+      # nên một số trình duyệt (Safari) sẽ không lưu cookie. Compose này chạy local nên để development.
+      NODE_ENV: development
+      # Tạo tài khoản admin/staff mẫu khi start (xem server/prisma/seed.js, mật khẩu trong README).
+      RUN_SEED: "true"
+    ports:
+      # Cổng 3000 bị `npm run dev` chiếm thì đổi: APP_PORT=3001 docker compose up
+      - "${APP_PORT:-3000}:3000"
+
+volumes:
+  pgdata:
