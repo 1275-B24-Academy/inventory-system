@@ -1,0 +1,28 @@
+# Giữ build context nhỏ và không để lọt secret vào image.
+
+# Dependency cài lại trong image (khác OS/kiến trúc với máy dev)
+**/node_modules
+
+# Output sinh ra khi build/test
+**/dist
+**/coverage
+server/src/generated
+
+# Secret: truyền qua biến môi trường lúc chạy, không đóng vào image
+**/.env
+**/.env.*
+!**/.env.example
+
+# Không cần trong image
+.git
+.github
+.husky
+.vscode
+.neon
+neon.ts
+docs
+tests
+server/tests
+*.md
+**/*.log
+**/.DS_Store

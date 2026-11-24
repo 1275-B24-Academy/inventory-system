@@ -17,9 +17,44 @@ Stack: **React + Vite + Material UI** (client), **Node.js + Express** (server), 
 | ---------------------------------------------- | ------------------------------------------------ |
 | ![Trang đăng nhập](docs/screenshots/login.png) | ![Trang sản phẩm](docs/screenshots/products.png) |
 
-## Cách chạy
+## Chạy nhanh bằng Docker
 
-Cần cài trước: [Node.js 22](https://nodejs.org/) và [PostgreSQL](https://www.postgresql.org/download/) (bản 14 trở lên).
+Chỉ cần cài Docker: [Docker Desktop](https://www.docker.com/products/docker-desktop/), hoặc trên Mac có thể dùng [Colima](https://github.com/abiosoft/colima) / [OrbStack](https://orbstack.dev/) (lệnh `docker` giống hệt). Không cần cài Node.js hay PostgreSQL.
+
+```bash
+docker compose up --build
+```
+
+Mở <http://localhost:3000>, đăng nhập bằng tài khoản seed:
+
+| Email               | Mật khẩu   | Quyền   |
+| ------------------- | ---------- | ------- |
+| `admin@example.com` | `admin123` | `admin` |
+| `staff@example.com` | `staff123` | `staff` |
+
+Chuyện gì xảy ra khi chạy lệnh trên:
+
+- `docker compose` đọc `docker-compose.yml`, dựng 2 service: `db` (Postgres 16) và `app` (build từ `Dockerfile`: Express vừa chạy API vừa serve bản build của client, giống production, nên chỉ có một cổng 3000).
+- `app` chờ `db` healthy, rồi `docker-entrypoint.sh` chạy migration → seed tài khoản mẫu → start server.
+- Dữ liệu Postgres nằm trong volume `pgdata`, **tách riêng** với Postgres trên máy bạn. Seed chạy mỗi lần start nhưng không tạo trùng.
+
+Lệnh hay dùng:
+
+```bash
+docker compose up -d --build   # chạy nền
+docker compose logs -f app     # xem log server (Ctrl+C chỉ thoát xem log, container vẫn chạy)
+docker compose down            # dừng, giữ dữ liệu
+docker compose down -v         # dừng và xóa luôn dữ liệu (volume pgdata)
+docker compose up -d db        # chỉ chạy Postgres, server/client chạy bằng npm như bên dưới
+```
+
+> Cổng 3000 hoặc 5432 bị chiếm (đang chạy `npm run dev` hoặc Postgres trên máy)? Đổi cổng phía máy: `APP_PORT=3001 POSTGRES_PORT=5433 docker compose up`.
+
+Docker phù hợp để dùng thử. Khi sửa code, chạy bằng Node (bên dưới) để có hot reload.
+
+## Cách chạy (dev)
+
+Cần cài trước: [Node.js 22](https://nodejs.org/) và [PostgreSQL](https://www.postgresql.org/download/) (bản 14 trở lên). Không muốn cài PostgreSQL thì dùng `docker compose up -d db` (DB đã có sẵn tên `inventory`, `DATABASE_URL` mặc định trong `.env.example` khớp luôn), bỏ qua bước 1.
 
 **1. Tạo database trống:**
 
@@ -36,6 +71,7 @@ cd server
 cp .env.example .env   # sửa DATABASE_URL cho khớp Postgres trên máy
 npm install            # tự chạy `prisma generate` để sinh Prisma Client
 npm run db:migrate     # áp các migration -> tạo đủ bảng
+npm run db:seed        # tạo tài khoản admin/staff mẫu (xem bảng ở mục Docker)
 npm run dev
 ```
 
@@ -51,7 +87,7 @@ npm run dev
 
 Client không cần tạo `.env`: địa chỉ server khi dev đã có sẵn trong `client/.env.development`.
 
-**4. Dùng thử:** mở <http://localhost:5173>, bấm đăng ký tài khoản rồi đăng nhập. Tài khoản mới có quyền `staff`; muốn có quyền `admin` thì chạy:
+**4. Dùng thử:** mở <http://localhost:5173>, đăng nhập bằng tài khoản seed (`admin@example.com` / `admin123`), hoặc bấm đăng ký tài khoản mới. Tài khoản mới có quyền `staff`; muốn có quyền `admin` thì chạy:
 
 ```bash
 psql -d inventory -c "UPDATE users SET role = 'admin' WHERE email = 'email-cua-ban@example.com';"
