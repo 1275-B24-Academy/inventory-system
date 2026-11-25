@@ -83,8 +83,22 @@ class GoodsReceiptRepository {
           throw createError("Sản phẩm trong phiếu không tồn tại.", 404);
         }
 
+        const updatedProduct = await tx.product.findUniqueOrThrow({
+          where: { id: item.product_id },
+          select: { stock: true },
+        });
+
         await tx.stockMovement.create({
-          data: { receipt_item_id: item.id, quantity: item.quantity },
+          data: {
+            receipt_item_id: item.id,
+            product_id: item.product_id,
+            type: "RECEIPT",
+            quantity: item.quantity,
+            balance_after: updatedProduct.stock,
+            document_type: "GOODS_RECEIPT",
+            document_id: receiptId,
+            created_by: confirmedBy,
+          },
         });
       }
 
