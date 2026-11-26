@@ -1,33 +1,39 @@
 import { createError } from "../utils/httpError.js";
-
+import { next } from "./documentSequence.repository.js";
 class GoodsReceiptRepository {
   constructor(prisma) {
     this.prisma = prisma;
   }
 
   async createDraft(createdBy) {
-    return this.prisma.goodsReceipt.create({
-      data: { created_by: createdBy },
+    return this.prisma.$transaction(async (tx) => {
+      const documentNo = await next(tx, "PN");
+      return tx.goodsReceipt.create({
+        data: { document_no: documentNo, created_by: createdBy },
+      });
     });
   }
 
   async createWithItems(createdBy, items, receiptType = "NORMAL") {
-    // Một lệnh create kèm nested create cho các dòng: Prisma tự chạy trong 1 transaction,
-    // lỗi ở dòng nào thì cả phiếu cũng không được tạo.
-    return this.prisma.goodsReceipt.create({
-      data: {
-        created_by: createdBy,
-        receipt_type: receiptType,
-        items: {
-          create: items.map((item) => ({
-            product_id: item.productId,
-            quantity: item.quantity,
-          })),
+    return this.prisma.$transaction(async (tx) => {
+      const documentNo = await next(tx, "PN");
+
+      return tx.goodsReceipt.create({
+        data: {
+          document_no: documentNo,
+          created_by: createdBy,
+          receipt_type: receiptType,
+          items: {
+            create: items.map((item) => ({
+              product_id: item.productId,
+              quantity: item.quantity,
+            })),
+          },
         },
-      },
-      include: {
-        items: { orderBy: { id: "asc" } },
-      },
+        include: {
+          items: { orderBy: { id: "asc" } },
+        },
+      });
     });
   }
 
@@ -71,7 +77,10 @@ class GoodsReceiptRepository {
       if (items.length === 0) {
         throw createError("Phiếu nhập chưa có sản phẩm.", 400);
       }
-
+      // Đọc phiếu đã xác nhận một lần để lấy mã và trả về cuối hàm.
+      const receipt = await tx.goodsReceipt.findUniqueOrThrow({
+        where: { id: receiptId },
+      });
       // 3. Cộng tồn và ghi lịch sử cho từng sản phẩm.
       for (const item of items) {
         const product = await tx.product.updateMany({
@@ -98,11 +107,12 @@ class GoodsReceiptRepository {
             document_type: "GOODS_RECEIPT",
             document_id: receiptId,
             created_by: confirmedBy,
+            document_no: receipt.document_no,
           },
         });
       }
 
-      return tx.goodsReceipt.findUnique({ where: { id: receiptId } });
+      return receipt;
     });
   }
 }

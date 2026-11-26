@@ -1,5 +1,5 @@
 import { createError } from "../utils/httpError.js";
-
+import { next } from "./documentSequence.repository.js";
 class GoodsIssueRepository {
   constructor(prisma) {
     this.prisma = prisma;
@@ -7,20 +7,24 @@ class GoodsIssueRepository {
 
   // Tạo phiếu xuất nháp kèm danh sách sản phẩm.
   async createWithItems(createdBy, items) {
-    // Một lệnh create kèm nested create cho các dòng: Prisma tự chạy trong 1 transaction.
-    return this.prisma.goodsIssue.create({
-      data: {
-        created_by: createdBy,
-        items: {
-          create: items.map((item) => ({
-            product_id: item.productId,
-            quantity: item.quantity,
-          })),
+    return this.prisma.$transaction(async (tx) => {
+      const documentNo = await next(tx, "PX");
+      // Một lệnh create kèm nested create cho các dòng: Prisma tự chạy trong 1 transaction.
+      return tx.goodsIssue.create({
+        data: {
+          document_no: documentNo,
+          created_by: createdBy,
+          items: {
+            create: items.map((item) => ({
+              product_id: item.productId,
+              quantity: item.quantity,
+            })),
+          },
         },
-      },
-      include: {
-        items: { orderBy: { id: "asc" } },
-      },
+        include: {
+          items: { orderBy: { id: "asc" } },
+        },
+      });
     });
   }
 
@@ -61,6 +65,10 @@ class GoodsIssueRepository {
       if (items.length === 0) {
         throw createError("Phiếu xuất không có sản phẩm.", 400);
       }
+      // Đọc phiếu đã xác nhận một lần để lấy mã và trả về cuối hàm.
+      const issue = await tx.goodsIssue.findUniqueOrThrow({
+        where: { id: issueId },
+      });
 
       // 3. Trừ kho. Điều kiện "đủ tồn" (stock >= quantity) nằm TRONG câu update:
       //    2 phiếu xuất cùng sản phẩm xác nhận cùng lúc thì phiếu sau phải chờ,
@@ -107,6 +115,7 @@ class GoodsIssueRepository {
             document_type: "GOODS_ISSUE",
             document_id: issueId,
             created_by: confirmedBy,
+            document_no: issue.document_no,
           },
         });
       }
