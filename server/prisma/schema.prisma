@@ -73,6 +73,7 @@ model Product {
 // Phiếu nhập
 model GoodsReceipt {
   id           Int       @id @default(autoincrement())
+  document_no  String    @unique
   receipt_type String    @default("NORMAL") // CHECK: NORMAL | OPENING
   status       String    @default("draft") // CHECK: draft | confirmed  
   created_by   Int
@@ -105,6 +106,7 @@ model GoodsReceiptItem {
 // Phiếu xuất
 model GoodsIssue {
   id           Int       @id @default(autoincrement())
+  document_no  String    @unique
   status       String    @default("draft") // CHECK: draft | confirmed
   created_by   Int
   created_at   DateTime  @default(now()) @db.Timestamptz(6)
@@ -130,6 +132,15 @@ model GoodsIssueItem {
 
   @@unique([issue_id, product_id], map: "goods_issue_items_issue_product_key")
   @@map("goods_issue_items")
+}
+
+model DocumentSequence {
+  doc_type String
+  year     Int
+  last_no  Int
+
+  @@id([doc_type, year])
+  @@map("document_sequences")
 }
 
 // Nhập kho ghi quantity dương, xuất kho ghi quantity âm.
